@@ -33,3 +33,11 @@ func GetCombinedErrHandler(handlers ...ErrorHandler) ErrorHandler {
 		}
 	}
 }
+
+func (eg ErrorHandler) Recover() {
+	innerRecover(eg)
+}
+
+func (eg ErrorHandler) SafeGo(fn func()) {
+	SafeGo(fn, eg)
+}
