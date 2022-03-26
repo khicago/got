@@ -3,7 +3,7 @@ package typer
 import "errors"
 
 var (
-	ErrPropertyType = errors.New("got/typer: convert type  failed")
+	ErrPropertyType = errors.New("got/typer: convert type failed")
 )
 
 func Convert[T any](val any, defaultV T) (T, error) {
