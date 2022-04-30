@@ -48,8 +48,13 @@ func ExtractAnno[TAnno IAnnotationObject](targetObject any, defaultAnno TAnno) (
 	return ret, nil
 }
 
-func ExtractAnnoValuesFromTag[TAnno IAnnotationObject](annoObj TAnno, tag string) error { 
-	_, err = kvstr.KVStr(tag).ReflectTo(annoObj, &kvstr.QueryOption{ 
+func ExtractAnnoValuesFromTag[TAnno IAnnotationObject](annoObj TAnno, tag string) error {
+	keyMapping, err := getAnnoKeyMapping(annoObj)
+	if err != nil {
+		return err
+	}
+	_, err = kvstr.KVStr(tag).ReflectTo(annoObj, &kvstr.QueryOption{
+		TryMapping: keyMapping,
 		TrySnake:   true})
 	return err
 }
