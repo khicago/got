@@ -6,7 +6,7 @@ import (
 )
 
 type SlicePtrReflector struct {
-	ptr        interface{}
+	ptr        any
 	sliceValue *reflect.Value
 
 	elemType reflect.Type
@@ -28,7 +28,7 @@ func (ptrRef *SlicePtrReflector) ItemType() reflect.Type {
 	return ptrRef.elemType
 }
 
-func (ptrRef *SlicePtrReflector) Read(i int, outPtr interface{}) error {
+func (ptrRef *SlicePtrReflector) Read(i int, outPtr any) error {
 	vOut := reflect.ValueOf(outPtr)
 	if vOut.Kind() != reflect.Ptr {
 		return fmt.Errorf("invalid outter, should be a pointer of elem %v", vOut.Kind())
@@ -46,7 +46,7 @@ func (ptrRef *SlicePtrReflector) Read(i int, outPtr interface{}) error {
 	return nil
 }
 
-func NewSlicePtrReflector(slicePtr interface{}) (*SlicePtrReflector, error) {
+func NewSlicePtrReflector(slicePtr any) (*SlicePtrReflector, error) {
 	value, err := ToWriteableSliceValue(slicePtr)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func NewSlicePtrReflector(slicePtr interface{}) (*SlicePtrReflector, error) {
 	}, nil
 }
 
-func ToWriteableSliceValue(slicePointer interface{}) (*reflect.Value, error) {
+func ToWriteableSliceValue(slicePointer any) (*reflect.Value, error) {
 	vSlicePtr := reflect.ValueOf(slicePointer)
 	// to make sure it are addressable
 	if vSlicePtr.Kind() != reflect.Ptr {
@@ -70,7 +70,7 @@ func ToWriteableSliceValue(slicePointer interface{}) (*reflect.Value, error) {
 	return &vSlice, nil
 }
 
-func GetSliceElementType(slice interface{}) (reflect.Type, error) {
+func GetSliceElementType(slice any) (reflect.Type, error) {
 	ty := reflect.TypeOf(slice)
 	if ty.Kind() == reflect.Ptr {
 		ty = ty.Elem()
@@ -81,7 +81,7 @@ func GetSliceElementType(slice interface{}) (reflect.Type, error) {
 	return ty.Elem(), nil
 }
 
-func SliceContains(slice interface{}, target interface{}) bool {
+func SliceContains(slice any, target any) bool {
 	val := reflect.ValueOf(slice)
 	if val.Kind() != reflect.Slice {
 		return false

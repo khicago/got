@@ -11,7 +11,7 @@ import (
 
 func TestIterator_WriteTo(t *testing.T) {
 	i := 0
-	itr := func() (interface{}, error) {
+	itr := func() (any, error) {
 		i++
 		if i > 10 {
 			return nil, nil
@@ -34,7 +34,7 @@ func TestIterator_WriteToPtr(t *testing.T) {
 		Val int
 	}
 
-	itr := func() (interface{}, error) {
+	itr := func() (any, error) {
 		i++
 		if i > 10 {
 			return nil, nil
@@ -60,7 +60,7 @@ func TestIterator_WriteToWithMap(t *testing.T) {
 		Val int
 	}
 
-	itr := func() (interface{}, error) {
+	itr := func() (any, error) {
 		i++
 		if i > 10 {
 			return nil, nil
@@ -68,7 +68,7 @@ func TestIterator_WriteToWithMap(t *testing.T) {
 		return i, nil
 	}
 	ret := make([]*c, 0, 10)
-	err := reflecto.Iterator(itr).WriteTo(&ret, reflecto.ItrMapper(func(in interface{}) (interface{}, error) { return &c{in.(int)}, nil }))
+	err := reflecto.Iterator(itr).WriteTo(&ret, reflecto.ItrMapper(func(in any) (any, error) { return &c{in.(int)}, nil }))
 	assert.Nil(t, err, "set to pointer of slice should be ok")
 	for i := 0; i < 10; i++ {
 		val := c{i + 1}
@@ -79,7 +79,7 @@ func TestIterator_WriteToWithMap(t *testing.T) {
 func TestIterator_WriteToWithReduce(t *testing.T) {
 	i := 0
 
-	itr := func() (interface{}, error) {
+	itr := func() (any, error) {
 		i++
 		if i > 10 {
 			return nil, nil
@@ -87,7 +87,7 @@ func TestIterator_WriteToWithReduce(t *testing.T) {
 		return i, nil
 	}
 	ret := make([]int, 0, 10)
-	err := reflecto.Iterator(itr).WriteTo(&ret, reflecto.ItrReducer(func(a interface{}, b interface{}) (interface{}, error) { return a.(int) + b.(int), nil }))
+	err := reflecto.Iterator(itr).WriteTo(&ret, reflecto.ItrReducer(func(a any, b any) (any, error) { return a.(int) + b.(int), nil }))
 	assert.Nil(t, err, "set to pointer of slice should be ok")
 	assert.Equal(t, 55, ret[0], "value should be sum of values")
 }
@@ -99,7 +99,7 @@ func TestIterator_WriteToWithMapAndReduce(t *testing.T) {
 		Val int
 	}
 
-	itr := func() (interface{}, error) {
+	itr := func() (any, error) {
 		i++
 		if i > 10 {
 			return nil, nil
@@ -108,8 +108,8 @@ func TestIterator_WriteToWithMapAndReduce(t *testing.T) {
 	}
 	ret := make([]int, 0, 10)
 	err := reflecto.Iterator(itr).WriteTo(&ret,
-		reflecto.ItrMapper(func(in interface{}) (interface{}, error) { return in.(*c).Val, nil }),
-		reflecto.ItrReducer(func(a interface{}, b interface{}) (interface{}, error) { return a.(int) + b.(int), nil }),
+		reflecto.ItrMapper(func(in any) (any, error) { return in.(*c).Val, nil }),
+		reflecto.ItrReducer(func(a any, b any) (any, error) { return a.(int) + b.(int), nil }),
 	)
 	assert.Nil(t, err, "set to pointer of slice should be ok")
 	assert.Equal(t, 55, ret[0], "value should be sum of values")
@@ -118,7 +118,7 @@ func TestIterator_WriteToWithMapAndReduce(t *testing.T) {
 func TestIterator_WriteToWithExitValidator(t *testing.T) {
 	i := 0
 
-	itr := func() (interface{}, error) {
+	itr := func() (any, error) {
 		i++
 		if i > 10 {
 			return nil, io.EOF
@@ -126,7 +126,7 @@ func TestIterator_WriteToWithExitValidator(t *testing.T) {
 		return i, nil
 	}
 	ret := make([]int, 0, 10)
-	err := reflecto.Iterator(itr).WriteTo(&ret, reflecto.ItrExitValidator(func(iv interface{}, err error) (bool, error) {
+	err := reflecto.Iterator(itr).WriteTo(&ret, reflecto.ItrExitValidator(func(iv any, err error) (bool, error) {
 		if err == io.EOF {
 			return true, nil
 		}

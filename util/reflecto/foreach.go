@@ -48,7 +48,7 @@ func (*forEachFieldConfig) Override(fn func(cfg *forEachFieldConfig)) forEachFie
 	return func(conf *forEachFieldConfig) { fn(conf) }
 }
 
-func ForEachField(target interface{}, fn FieldHandler, options ...forEachFieldOption) (err error) {
+func ForEachField(target any, fn FieldHandler, options ...forEachFieldOption) (err error) {
 	defer procast.GetRewriteErrHandler(&err).Recover()
 
 	conf := (&forEachFieldConfig{}).pipe(options)

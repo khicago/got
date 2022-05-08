@@ -46,7 +46,7 @@ func Conv2SnakeAndCamel(name string) (snake, camel string) {
 }
 
 // Conv2PlainType takes any string str and convert it into any plain types (possibly truncated)
-func Conv2PlainType(str string, p reflect.Type) (interface{}, error) {
+func Conv2PlainType(str string, p reflect.Type) (any, error) {
 	switch kind := p.Kind(); kind {
 	case reflect.String:
 		return str, nil

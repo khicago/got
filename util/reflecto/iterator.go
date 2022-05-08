@@ -8,22 +8,22 @@ import (
 )
 
 type (
-	Iterator func() (interface{}, error)
+	Iterator func() (any, error)
 
-	ItrMapper        func(iv interface{}) (interface{}, error)
-	ItrReducer       func(iv interface{}, in interface{}) (interface{}, error)
-	ItrExitValidator func(iv interface{}, err error) (bool, error)
+	ItrMapper        func(iv any) (any, error)
+	ItrReducer       func(iv any, in any) (any, error)
+	ItrExitValidator func(iv any, err error) (bool, error)
 )
 
-func (itr Iterator) Next() (interface{}, error) {
+func (itr Iterator) Next() (any, error) {
 	return itr()
 }
 
-func defaultExitValidator(iv interface{}, err error) (bool, error) {
+func defaultExitValidator(iv any, err error) (bool, error) {
 	return iv == nil, err
 }
 
-func (itr Iterator) WriteTo(slicePointer interface{}, handler ...interface{}) (err error) {
+func (itr Iterator) WriteTo(slicePointer any, handler ...any) (err error) {
 	defer procast.Recover(func(e error) { err = e })
 
 	vSlice, err := ToWriteableSliceValue(slicePointer)
