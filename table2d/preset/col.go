@@ -23,10 +23,6 @@ type (
 	}
 )
 
-const (
-	InvalidCol Col = -1
-)
-
 func NewColHeader() *ColMetaTable {
 	return &ColMetaTable{
 		Def:          make(map[Col]*ColMeta),
