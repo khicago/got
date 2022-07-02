@@ -6,12 +6,12 @@ type (
 
 var EHEmpty ErrorHandler = func(error) {}
 
-func GetRewriteErrHandler(err *error) ErrorHandler {
-	if err == nil {
+func GetRewriteErrHandler(errPtr *error) ErrorHandler {
+	if errPtr == nil {
 		return EHEmpty
 	}
 	return func(e error) {
-		*err = e
+		*errPtr = e
 	}
 }
 
@@ -32,10 +32,6 @@ func GetCombinedErrHandler(handlers ...ErrorHandler) ErrorHandler {
 			}
 		}
 	}
-}
-
-func (eg ErrorHandler) Recover() {
-	innerRecover(eg)
 }
 
 func (eg ErrorHandler) SafeGo(fn func()) {
