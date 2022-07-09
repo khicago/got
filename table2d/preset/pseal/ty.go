@@ -69,7 +69,7 @@ const (
 )
 
 var (
-	DefaultAny any = nil
+	DefaultAny = typer.ZeroVal[any]()
 )
 
 var tyNames = map[Type]string{
