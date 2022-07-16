@@ -1,20 +1,20 @@
 package procast_test
 
 import (
-	"github.com/khicago/got/util/procast"
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/khicago/got/util/procast"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRecover(t *testing.T) {
 	err := func() (err error) {
-
 		h := procast.GetRewriteErrHandler(&err)
 		defer procast.Recover(h)
-		//defer h.Recover()
+		// defer h.Recover()
 		func() {
 			panic("panic 1") // should keep at line 19.
 		}()
@@ -43,6 +43,6 @@ func TestSafeGo(t *testing.T) {
 		return
 	}
 
-	//fmt.Println(err.Error())
+	// fmt.Println(err.Error())
 	assert.True(t, strings.HasPrefix(err.Error(), "panic 2 [ panic !!!"), "SafeGo handle error type wrong %s", err.Error())
 }

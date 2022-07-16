@@ -5,7 +5,6 @@ import (
 	"runtime/debug"
 )
 
-// Recover 适用于需要对 err 进行重写的场景, 如 handler 中
 func Recover(handler ErrorHandler) {
 	e := recover()
 	if handler == nil || e == nil {
@@ -17,7 +16,7 @@ func Recover(handler ErrorHandler) {
 	} else {
 		handler(fmt.Errorf("%v [ panic !!! %s ]", e, panicLoc))
 	}
-	//innerRecover(handler)
+	// innerRecover(handler)
 }
 
 func innerRecover(handler ErrorHandler) {
@@ -27,7 +26,7 @@ func innerRecover(handler ErrorHandler) {
 	}
 	panicLoc := figurePanicLocation()
 	stack := debug.Stack()
-	//fmt.Println("stack", string(stack))
+	// fmt.Println("stack", string(stack))
 	if err, ok := e.(error); ok {
 		handler(fmt.Errorf("%w [ panic !!! %s , stack= %s ]", err, panicLoc, string(stack)))
 	} else {
