@@ -20,5 +20,7 @@ type (
 		// First used to find the first position in witch the val matches the given predicate
 		// row by row, colum by colum
 		First(pred typer.Predicate[TVal]) (Row, Col)
+
+		LineReader() LineReader[TVal]
 	}
 )

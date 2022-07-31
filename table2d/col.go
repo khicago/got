@@ -3,6 +3,7 @@ package table2d
 import (
 	"fmt"
 	"github.com/khicago/got/annoparse"
+	"github.com/khicago/got/table2d/tablety"
 	"github.com/khicago/got/util/reflecto"
 	"github.com/khicago/got/util/strs"
 	"io"
@@ -36,7 +37,7 @@ var (
 
 // ParseByCol
 // read all line from LineReader, and insert all items to outSlicePointer
-func ParseByCol(outSlicePointer any, reader LineReader, option ...ParseOption) error {
+func ParseByCol(outSlicePointer any, reader tablety.LineReader[string], option ...ParseOption) error {
 	itr := func() (line any, err error) { return reader.Read() }
 
 	elemType, err := reflecto.GetSliceElementType(outSlicePointer)

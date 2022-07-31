@@ -1,6 +1,8 @@
 package preset
 
-import "github.com/khicago/got/table2d/preset/pseal"
+import (
+	"github.com/khicago/got/table2d/preset/pseal"
+)
 
 type (
 	Preset struct {

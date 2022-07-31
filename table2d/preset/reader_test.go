@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/khicago/got/internal/utils"
 	"github.com/khicago/got/table2d/tablety"
+	"github.com/khicago/got/util/inlog"
 	"github.com/khicago/got/util/typer"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -14,7 +15,28 @@ type (
 	MockTableReader struct {
 		Data [][]string
 	}
+
+	MockLineReader struct {
+		*MockTableReader
+		row int
+	}
 )
+
+func (m MockTableReader) LineReader() tablety.LineReader[string] {
+	return &MockLineReader{MockTableReader: &m}
+}
+
+func (m *MockLineReader) Read() (ret []string, err error) {
+	if m.row < len(m.MockTableReader.Data) {
+		ret = m.MockTableReader.Data[m.row]
+		m.row++
+	}
+	return ret, nil
+}
+
+func (m MockTableReader) Reader() *MockLineReader {
+	return &MockLineReader{MockTableReader: &m}
+}
 
 func (m MockTableReader) MaxRow() int {
 	return len(m.Data) - 1
@@ -54,7 +76,35 @@ var data = MockTableReader{
 }
 
 func TestPresetReader(t *testing.T) {
-	p := Read(context.TODO(), data)
+	p, err := Read(context.TODO(), data)
+	if !assert.Nil(t, err, "read by table failed") {
+		return
+	}
+
+	inlog.Infof("header: %s\n", utils.MarshalPrintAll(p.Header))
+	inlog.Infof("table: %s\n", utils.MarshalPrintAll(p.PropTable))
+
+	lvUpMeta := p.Header.GetByName("lv_up")
+	if !assert.NotNil(t, lvUpMeta, "lv_up col cannot found") {
+		return
+	}
+
+	lvUpCol := lvUpMeta.Col
+	if !assert.Equal(t, 1, lvUpCol, "lv_up col error") {
+		return
+	}
+	v, err := p.Query(10001, lvUpCol).ID()
+	if !assert.Nil(t, err, "get lvUpCol of 10001 failed") {
+		return
+	}
+	assert.Equal(t, int64(10002), v, "get lvUpCol of 10001 val error")
+}
+
+func TestPresetReaderLines(t *testing.T) {
+	p, err := ReadLines(context.TODO(), data.LineReader())
+	if !assert.Nil(t, err, "read by lineReader failed") {
+		return
+	}
 	fmt.Printf("header: %s\n", utils.MarshalPrintAll(p.Header))
 	fmt.Printf("table: %s\n", utils.MarshalPrintAll(p.PropTable))
 

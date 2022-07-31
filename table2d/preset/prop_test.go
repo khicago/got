@@ -1,8 +1,9 @@
 package preset
 
 import (
-	"github.com/khicago/got/table2d/preset/pseal"
 	"testing"
+
+	"github.com/khicago/got/table2d/preset/pseal"
 
 	"github.com/stretchr/testify/assert"
 )

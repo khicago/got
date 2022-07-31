@@ -127,8 +127,8 @@ var tyAsserter = map[Type]typer.Predicate[any]{
 
 func SymToType(sym string) Type {
 	sym = strs.TrimLower(sym)
-	for ty, syms := range tySymbol {
-		for _, s := range syms {
+	for ty, symbols := range tySymbol {
+		for _, s := range symbols {
 			if s == sym {
 				return ty
 			}

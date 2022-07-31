@@ -8,7 +8,6 @@ import (
 )
 
 func TestSeal(t *testing.T) {
-
 	v, err := pseal.PID(100010).PID()
 	assert.Nil(t, err, "convert pid failed")
 	assert.Equal(t, int64(100010), v, "convert pid error")
@@ -24,16 +23,13 @@ func TestSeal(t *testing.T) {
 	vf, err := pseal.Float(1.23).Float()
 	assert.Nil(t, err, "convert float failed")
 	assert.Equal(t, 1.23, vf, "convert float error")
-
 }
 
 func TestSealByString(t *testing.T) {
-
-	seal, err := pseal.TyPID.SealByStr("100010")
+	seal, err := pseal.TyPID.SealStr("100010")
 	assert.Nil(t, err, "seal pid by string failed")
 	v, err2 := seal.PID()
 
 	assert.Nil(t, err2, "seal pid by string, fetching failed")
 	assert.Equal(t, int64(100010), v, "convert pid error")
-
 }

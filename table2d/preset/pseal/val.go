@@ -1,6 +1,8 @@
 package pseal
 
-import "github.com/khicago/got/util/typer"
+import (
+	"github.com/khicago/got/util/typer"
+)
 
 type (
 	Seal struct {

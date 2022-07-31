@@ -1,9 +1,10 @@
 package pseal
 
 import (
-	"fmt"
-	"github.com/khicago/got/util/strs"
+	"github.com/khicago/got/util/inlog"
 	"strconv"
+
+	"github.com/khicago/got/util/strs"
 )
 
 func (ty Type) SealDefault() Seal { // todo: refine this
@@ -19,13 +20,13 @@ func (ty Type) Seal(val any) Seal {
 	return NewSeal(ty, val)
 }
 
-func (ty Type) SealByStr(val string) (Seal, error) {
+func (ty Type) SealStr(val string) (Seal, error) {
 	val = strs.TrimLower(val)
 	switch ty {
 	case TyAny:
 		return ty.Seal(val), nil
 	case TyPID:
-		fmt.Println("seal pid", val)
+		inlog.Debug("seal pid", val)
 		pid, err := strconv.ParseInt(val, 10, 64)
 		if err != nil {
 			return ty.SealDefault(), err
