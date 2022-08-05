@@ -30,6 +30,10 @@ func SliceReduce[TSliceVal, TTarget any](slice []TSliceVal, reduceFn func(TSlice
 	return target
 }
 
+func SliceLast[TSliceVal any](slice []TSliceVal) TSliceVal {
+	return slice[len(slice)-1]
+}
+
 // no needs to provide stack fn
 //
 //func SlicePushTail[TSliceVal any](slicePtr *[]TSliceVal, val TSliceVal) {
