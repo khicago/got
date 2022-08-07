@@ -12,13 +12,55 @@ import (
 )
 
 type (
+	// ColMeta defines how this column is resolved, only the first Mark
+	// of the substructure is recorded in the upper ColMeta list
 	ColMeta struct {
+
+		// Col is the column number of the meta, this information is also
+		// available in the upper level table, the redundancy is provided
+		// here mainly to pass the full information separately and later.
 		Col
-		Type       pseal.Type
-		Name       string
-		Sym        string
+
+		// Type is the type of data for the column
+		Type pseal.Type
+
+		// Name column names are automatically converted to snake lower
+		// case as the data is tiled, so even if there are substructures,
+		// there can be no renamed columns
+		Name string
+
+		// Sym used to store the actual symbol filled in, to do some data
+		// comparison, and to derive the type. When serialising and
+		// de-serialising, the symbol should be serialised and de-serialised
+		// in preference to the type.
+		Sym string
+
+		// Constraint is responsible for data validation, correlation,
+		// processing, etc.
 		Constraint string
 	}
+
+	// The ColMetaTable is a nested structure of ColMeta information tables
+	//and is also optimised for queries by means of cached indexes etc. A
+	//Preset has one and only one root ColMetaTable
+	ColMetaTable struct {
+
+		// Def handled ColMeta's information contained directly in
+		// this ColMetaTable
+		Def map[Col]*ColMeta
+
+		// Sub handle children of the meta table
+		// why Col data needs to be structured:
+		// - Although it is possible to structure the query in the col
+		// header and prop, it does not solve the renaming problem.
+		// In practice, especially in the case of lists with structures
+		// inside them, there are problems with renaming, so it would
+		// be too complicated to use query indexing to make it.
+		Sub map[Col]*ColMetaTable
+
+		nameColIndex map[string]Col
+	}
+
 	//
 	//IColMetaTable interface {
 	//	Set(col Col, colDef *ColMeta) IColMetaTable
@@ -27,21 +69,15 @@ type (
 	//	GetByName(name string) *ColMeta
 	//}
 
-	ColMetaTable struct {
-		Def          map[Col]*ColMeta
-		nameColIndex map[string]Col
-	}
 )
 
 func NewColHeader() *ColMetaTable {
 	return &ColMetaTable{
 		Def:          make(map[Col]*ColMeta),
 		nameColIndex: make(map[string]Col),
+		Sub:          make(map[Col]*ColMetaTable),
 	}
 }
-
-//
-//var _ IColMetaTable = &ColMetaTable{}
 
 func (header *ColMetaTable) Set(col Col, colDef *ColMeta) *ColMetaTable {
 	colDef.Col = col
@@ -80,6 +116,7 @@ var (
 	_ json.Unmarshaler = &ColMetaTable{}
 )
 
+// todo: 支持结构化
 func (header *ColMetaTable) MarshalJSON() ([]byte, error) {
 	strs := make([]string, 0, len(header.Def))
 	keys := typer.Keys(header.Def)
@@ -91,6 +128,7 @@ func (header *ColMetaTable) MarshalJSON() ([]byte, error) {
 	return json.Marshal(strs)
 }
 
+// todo: 支持结构化
 func (header *ColMetaTable) UnmarshalJSON(bytes []byte) error {
 	strs := make([]string, 0)
 	if err := json.Unmarshal(bytes, &strs); err != nil {

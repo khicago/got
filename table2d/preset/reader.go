@@ -54,17 +54,16 @@ func ReadLines(ctx context.Context, reader tablety.LineReader[string]) (*Preset,
 
 	// read returns nil, nil when finished
 	read := func() (ln []string, err error) {
-		for len(ln) == 0 {
-			rowCount++ // start from 1
-			ln, err = assertRead(reader, func(v []string) bool { return len(v) >= colMax })
-			if err != nil {
-				inlog.Debugf("- ln %d fin at, %#v, %s\n", rowCount, ln, err)
-				if err == io.EOF {
-					return nil, nil
-				}
-				return nil, fmt.Errorf("%w, row= %v", err, rowCount)
+		rowCount++ // start from 1
+		ln, err = assertRead(reader, func(v []string) bool { return len(v) >= colMax })
+		if err != nil {
+			inlog.Debugf("- ln %d fin at, %#v, %s\n", rowCount, ln, err)
+			if err == io.EOF {
+				return nil, nil
 			}
+			return nil, fmt.Errorf("%w, row= %v", err, rowCount)
 		}
+
 		inlog.Debug("- ln", rowCount, ln)
 		return ln, nil
 	}
@@ -101,9 +100,27 @@ GetColPID:
 		return nil, err
 	}
 
-	marksStack := make([]Col, 0, colMax+1)
+	marksStack := pmark.NewStack[Col](colMax)
+
 	preset := NewPreset()
 
+	headerStack := []*ColMetaTable{preset.Header}
+	colPush := func(pairing bool, event pmark.Pair[Col]) {
+		if !pairing {
+			newHeader := NewColHeader()
+			typer.SliceLast(headerStack).Sub[event.LVal] = newHeader
+			headerStack = append(headerStack, newHeader)
+
+			inlog.Debugf("------------ header stack in %#v, %v\n", event, headerStack)
+			return
+		}
+		headerStack = headerStack[:len(headerStack)-1]
+
+		inlog.Debugf("------------ header stack out %#v, %v\n", event, headerStack)
+	}
+
+	// try to generate header
+	inlog.Debugf("colMax is %v\n", colMax)
 	for c := colPID; c <= colMax; c++ {
 		sym := strs.TrimLower(lineOfMeta[c])
 		ty := pseal.SymToType(sym)
@@ -119,26 +136,29 @@ GetColPID:
 			Name:       strs.Conv2Snake(lineColName[c]),
 			Constraint: lineConstraint[c],
 		}
-		preset.Header.Set(c, cMeta)
+		typer.SliceLast(headerStack).Set(c, cMeta) // todo: 第一个 Mark 留在父结构里
 
 		if ty == pseal.TyMark {
-			lStack := len(marksStack)
-			if lStack == 0 {
-				marksStack = append(marksStack, c)
-				continue
-			}
-			peak := marksStack[lStack-1]
-			if pmark.IsPair(preset.Header.Get(peak).Sym, sym) {
-				marksStack = marksStack[:lStack-1]
+			err := marksStack.Consume(pmark.Mark(sym), c, colPush)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
 
+	childrenCols := make(map[Col]pmark.Pair[Col], 0)
+	for i, p := range marksStack.Results {
+		childrenCols[p.LVal] = marksStack.Results[i]
+	}
+	// try load data values
+
+	inlog.Debugf("- header stack %#v", headerStack)
 	l, e := read()
 	for ; l != nil; l, e = read() {
 		inlog.Debugf("line, %v \n", l)
 		prop := NewProp()
-		for c, meta := range preset.Header.Def {
+		prop.childrenCols = childrenCols
+		for c, meta := range typer.SliceLast(headerStack).Def {
 			str := l[c]
 			val, err := meta.Type.SealStr(str)
 			if err != nil {

@@ -2,7 +2,6 @@ package preset
 
 import (
 	"context"
-	"fmt"
 	"github.com/khicago/got/internal/utils"
 	"github.com/khicago/got/table2d/tablety"
 	"github.com/khicago/got/util/inlog"
@@ -68,10 +67,10 @@ var _ tablety.Table2DReader[string] = &MockTableReader{}
 
 var data = MockTableReader{
 	Data: [][]string{
-		{"@", "ID", "INT", "Float", "[", "", "]"},
-		{" ", "link(@)", "test($>1,$<50)", "test($%2)", "link(item)", "", ""},
-		{"", "LvUp", "Power", "Magic", "InitItems", "", ""},
-		{"10001", "10002", "12", "1.2", "", "1010001", "1010002"},
+		{"@", "ID", "INT", "Float", "[", "", "]", "{", "", "}"},
+		{" ", "link(@)", "test($>1,$<50)", "test($%2)", "link(item)", "", "", "select", "", ""},
+		{"", "LvUp", "Power", "Magic", "InitItems", "", "", "InnerLvUpItem", "LvUp", ""},
+		{"10001", "10002", "12", "1.2", "", "1010001", "1010002", "", "1010003", ""},
 	},
 }
 
@@ -105,8 +104,8 @@ func TestPresetReaderLines(t *testing.T) {
 	if !assert.Nil(t, err, "read by lineReader failed") {
 		return
 	}
-	fmt.Printf("header: %s\n", utils.MarshalPrintAll(p.Header))
-	fmt.Printf("table: %s\n", utils.MarshalPrintAll(p.PropTable))
+	inlog.Infof("header: %s\n", utils.MarshalPrintAll(p.Header))
+	inlog.Infof("table: %s\n", utils.MarshalPrintAll(p.PropTable))
 
 	lvUpMeta := p.Header.GetByName("lv_up")
 	if !assert.NotNil(t, lvUpMeta, "lv_up col cannot found") {

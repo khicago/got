@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/khicago/got/table2d/preset/pseal"
 	"github.com/khicago/got/util/typer"
 	"sort"
@@ -16,38 +17,41 @@ type (
 
 	PropTable map[int64]*Prop // PID => Prop
 
+	PropData       map[Col]pseal.Seal
+	PropChildIndex map[Col]pmark.Pair[Col]
+
 	// Prop
 	// implementation of IProp
 	Prop struct {
-		p        map[Col]pseal.Seal
-		children []MarkPair
+		p            PropData
+		childrenCols PropChildIndex
+		keyIndex     []Col
 	}
-
-	MarkPair struct {
-		BeginMarkCol Col
-		EndMarkCol   Col
-	}
-
-	// List
-	// implementation of IProp
-	List []pseal.Seal
 
 	IProp interface {
 		Len() int
+		Has(col Col) bool
 		Get(col Col) pseal.Seal
-		Child(col Col) (IProp, error) // 直接把列表也放在 property 中, 方便按类型取
+
+		// Child
+		// get a descendant accessor
+		Child(col Col) (IProp, error)
+
+		// ForEach
+		// ordered traversal, indexes are rebuilt when index length is not equal to data length
+		ForEach(fn typer.DelegateAction2[Col, pseal.Seal])
 	}
 
 	MarkPairProp struct {
-		prop IProp
-		MarkPair
+		pmark.Pair[Col]
+		prop    IProp
 		ValCols []Col
 	}
 )
 
 var (
 	_ IProp = &Prop{}
-	_ IProp = &List{}
+
 	_ IProp = &MarkPairProp{}
 )
 
@@ -57,8 +61,8 @@ var (
 
 func NewProp() *Prop {
 	return &Prop{
-		p:        make(map[Col]pseal.Seal),
-		children: make([]MarkPair, 0),
+		p:            make(PropData),
+		childrenCols: make(map[Col]pmark.Pair[Col], 0),
 	}
 }
 
@@ -102,24 +106,13 @@ var (
 	_ json.Unmarshaler = &Prop{}
 )
 
-func propChild(prop IProp, col Col) (IProp, error) {
-	seal := prop.Get(col)
-	switch seal.Type() {
-	case pseal.TyNil:
-		return nil, ErrPropertyNil
-	case pseal.TyAny:
-		if v, ok := seal.Val().(IProp); ok {
-			return v, nil
-		}
-		return nil, ErrPropertyType
-	case pseal.TyMark:
-		// todo
-	}
-	return nil, ErrPropertyType
-}
-
 func (p *Prop) Len() int {
 	return len(p.p)
+}
+
+func (p *Prop) Has(col Col) (ok bool) {
+	_, ok = (p.p)[col]
+	return
 }
 
 func (p *Prop) Get(col Col) pseal.Seal {
@@ -130,34 +123,69 @@ func (p *Prop) Get(col Col) pseal.Seal {
 	return v
 }
 
-func (p *Prop) Child(col Col) (IProp, error) {
-	return propChild(p, col)
-}
-
-func (p *List) Len() int {
-	return len(*p)
-}
-
-func (p *List) Get(col Col) pseal.Seal {
-	if col < 0 || col > p.Len() {
-		return pseal.Nil
+func (p *Prop) ForEach(fn typer.DelegateAction2[Col, pseal.Seal]) {
+	if len(p.keyIndex) != p.Len() {
+		keys := typer.Keys(p.p)
+		sort.Ints(keys)
+		p.keyIndex = keys
 	}
-	return (*p)[col]
+
+	for _, col := range p.keyIndex {
+		fn.TryCall(col, p.p[col])
+	}
 }
 
-func (p *List) Child(col Col) (IProp, error) {
-	return propChild(p, col)
+// Child
+// In fact, the current implementation can be described as a `descendant`
+func (p *Prop) Child(col Col) (IProp, error) {
+	seal := p.Get(col)
+	switch seal.Type() {
+	case pseal.TyNil:
+		return nil, ErrPropertyNil
+	case pseal.TyAny:
+		if v, ok := seal.Val().(IProp); ok {
+			return v, nil
+		}
+		return nil, ErrPropertyType
+	case pseal.TyMark:
+		markPair, ok := p.childrenCols[col]
+		if !ok {
+			if p.Has(col) {
+				return nil, ErrPropertyType
+			}
+			return nil, ErrPropertyNil
+		}
+
+		return MarkPairProp{
+			Pair: markPair,
+			prop: p,
+		}, nil
+	}
+	return nil, ErrPropertyType
 }
 
 func (m MarkPairProp) Len() int {
 	return len(m.ValCols)
 }
 
+func (m MarkPairProp) colInside(col Col) bool {
+	if col > m.LVal && col < m.RVal {
+		return false
+	}
+	return true
+}
+
+func (m MarkPairProp) Has(col Col) bool {
+	if !m.colInside(col) {
+		return false
+	}
+	return m.prop.Has(col)
+}
+
 func (m MarkPairProp) Get(col Col) pseal.Seal {
-	if !typer.SliceContains(m.ValCols, col) {
+	if !m.colInside(col) {
 		return pseal.Nil
 	}
-
 	return m.prop.Get(col)
 }
 
@@ -167,4 +195,13 @@ func (m MarkPairProp) Child(col Col) (IProp, error) {
 	}
 
 	return m.prop.Child(col)
+}
+
+func (m MarkPairProp) ForEach(fn typer.DelegateAction2[Col, pseal.Seal]) {
+	m.prop.ForEach(func(c Col, s pseal.Seal) {
+		if c <= m.LVal || c >= m.RVal {
+			return
+		}
+		fn.TryCall(c, s)
+	})
 }

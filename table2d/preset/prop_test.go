@@ -1,6 +1,8 @@
 package preset
 
 import (
+	"github.com/khicago/got/table2d/preset/pmark"
+	"github.com/khicago/got/util/inlog"
 	"testing"
 
 	"github.com/khicago/got/table2d/preset/pseal"
@@ -10,16 +12,27 @@ import (
 
 func TestPreset(t *testing.T) {
 	example := &Prop{
-		0: pseal.PID(100010), // pid
-		1: pseal.ID(200300),  // id
-		2: pseal.Int(123),    // int
-		3: pseal.Float(1.23),
-		4: pseal.Any(&Prop{ // list
-			0: pseal.Any(&Prop{ // obj
-				0: pseal.Int(1),
-			}),
-		}),
-		5: pseal.ID(200303), // id
+		p: PropData{
+			0:  pseal.PID(100010), // pid
+			1:  pseal.ID(200300),  // id
+			2:  pseal.Int(123),    // int
+			3:  pseal.Float(1.23),
+			4:  pseal.Mark("["),
+			5:  pseal.Int(1),
+			6:  pseal.Int(2),
+			7:  pseal.Int(3),
+			8:  pseal.Int(4),
+			9:  pseal.Mark("]"),
+			10: pseal.ID(200303), // id
+		},
+		childrenCols: PropChildIndex{
+			4: pmark.Pair[Col]{
+				L:    "{",
+				R:    "}",
+				LVal: 4,
+				RVal: 9,
+			},
+		},
 	}
 
 	v, err := example.Get(0).PID()
@@ -38,16 +51,23 @@ func TestPreset(t *testing.T) {
 	assert.Nil(t, err, "convert float failed")
 	assert.Equal(t, 1.23, vf, "convert float error")
 
-	vl, err := example.Child(4)
+	vList, err := example.Child(4)
 	assert.Nil(t, err, "convert list failed")
 
-	vo, err := vl.Child(0)
-	assert.Nil(t, err, "convert object failed")
+	testValInd := 0
+	vList.ForEach(func(col Col, seal pseal.Seal) {
+		testValInd++
+		vListVal, err := seal.Int()
+		assert.Nil(t, err, "convert list failed")
+		assert.Equal(t, testValInd, vListVal, "convert list child val error")
 
-	voi, err := vo.Get(0).Int()
-	assert.Equal(t, 1, voi, "convert child param error")
-
-	vid, err := example.Get(5).PID()
-	assert.Nil(t, err, "convert id fallback failed")
-	assert.Equal(t, int64(200303), vid, "convert id fallback error")
+		inlog.Infof("list val %v: %v %v", testValInd, vListVal, err)
+	})
+	//
+	//voi, err := vl.Get(5).Int()
+	//assert.Equal(t, 1, voi, "convert child param error")
+	//
+	//vid, err := example.Get(5).PID()
+	//assert.Nil(t, err, "convert id fallback failed")
+	//assert.Equal(t, int64(200303), vid, "convert id fallback error")
 }
