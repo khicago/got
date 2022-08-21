@@ -3,61 +3,61 @@ package inlog
 var defaultLogger IMinimLog = &FmtPrinter{}
 
 // Debugf
-// print Debugf logs
+// innerPrint Debugf logs
 func Debugf(format string, args ...any) {
 	defaultLogger.Debugf(format, args...)
 }
 
 // Infof
-// print Infof logs
+// innerPrint Infof logs
 func Infof(format string, args ...any) {
 	defaultLogger.Infof(format, args...)
 }
 
 // Warnf
-// print Warnf logs
+// innerPrint Warnf logs
 func Warnf(format string, args ...any) {
 	defaultLogger.Warnf(format, args...)
 }
 
 // Errorf
-// print Errorf logs
+// innerPrint Errorf logs
 func Errorf(format string, args ...any) {
 	defaultLogger.Errorf(format, args...)
 }
 
 // Panicf
-// print Panicf logs
+// innerPrint Panicf logs
 func Panicf(format string, args ...any) {
 	defaultLogger.Panicf(format, args...)
 }
 
 // Debug
-// print Debug logs
+// innerPrint Debug logs
 func Debug(args ...any) {
 	defaultLogger.Debug(args...)
 }
 
 // Info
-// print Info logs
+// innerPrint Info logs
 func Info(args ...any) {
 	defaultLogger.Info(args...)
 }
 
 // Warn
-// print Warn logs
+// innerPrint Warn logs
 func Warn(args ...any) {
 	defaultLogger.Warn(args...)
 }
 
 // Error
-// print Error logs
+// innerPrint Error logs
 func Error(args ...any) {
 	defaultLogger.Error(args...)
 }
 
 // Panic
-// print Panic logs
+// innerPrint Panic logs
 func Panic(args ...any) {
 	defaultLogger.Panic(args...)
 }

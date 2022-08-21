@@ -21,9 +21,10 @@ type (
 	}
 )
 
-func print(prefix, format string, args ...any) {
+func innerPrint(prefix, format string, args ...any) {
 	if !typer.IsZero(format) {
 		fmt.Printf(prefix+" "+format, args...)
+		return
 	}
 	fmt.Println(append([]any{prefix}, args...)...)
 }
