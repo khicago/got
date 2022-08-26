@@ -6,14 +6,14 @@ import (
 
 type (
 	Preset struct {
-		Header *ColMetaTable
+		H *ColHeader
 		*PropTable
 	}
 )
 
 func NewPreset() *Preset {
 	return &Preset{
-		Header:    NewColHeader(),
+		H:         NewColHeader(),
 		PropTable: &PropTable{},
 	}
 }

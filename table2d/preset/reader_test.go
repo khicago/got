@@ -67,10 +67,10 @@ var _ tablety.Table2DReader[string] = &MockTableReader{}
 
 var data = MockTableReader{
 	Data: [][]string{
-		{"@", "ID", "INT", "Float", "[", "", "]", "{", "", "}"},
+		{"@", "ID", "INT", "Float", "[", "ID", "]", "{", "ID", "}"},
 		{" ", "link(@)", "test($>1,$<50)", "test($%2)", "link(item)", "", "", "select", "", ""},
 		{"", "LvUp", "Power", "Magic", "InitItems", "", "", "InnerLvUpItem", "LvUp", ""},
-		{"10001", "10002", "12", "1.2", "", "1010001", "1010002", "", "1010003", ""},
+		{"10001", "10002", "12", "1.2", "", "1010001", "", "", "1010003", ""},
 	},
 }
 
@@ -80,10 +80,10 @@ func TestPresetReader(t *testing.T) {
 		return
 	}
 
-	inlog.Infof("header: %s\n", utils.MarshalPrintAll(p.Header))
+	inlog.Infof("header: %s\n", utils.MarshalIndentPrintAll(p.H))
 	inlog.Infof("table: %s\n", utils.MarshalPrintAll(p.PropTable))
 
-	lvUpMeta := p.Header.GetByName("lv_up")
+	lvUpMeta := p.H.GetByName("lv_up")
 	if !assert.NotNil(t, lvUpMeta, "lv_up col cannot found") {
 		return
 	}
@@ -104,10 +104,10 @@ func TestPresetReaderLines(t *testing.T) {
 	if !assert.Nil(t, err, "read by lineReader failed") {
 		return
 	}
-	inlog.Infof("header: %s\n", utils.MarshalPrintAll(p.Header))
+	inlog.Infof("header: %s\n", utils.MarshalIndentPrintAll(p.H))
 	inlog.Infof("table: %s\n", utils.MarshalPrintAll(p.PropTable))
 
-	lvUpMeta := p.Header.GetByName("lv_up")
+	lvUpMeta := p.H.GetByName("lv_up")
 	if !assert.NotNil(t, lvUpMeta, "lv_up col cannot found") {
 		return
 	}

@@ -13,10 +13,10 @@ func TestFile(t *testing.T) {
 		return
 	}
 
-	inlog.Infof("header: %s\n", utils.MarshalPrintAll(p.Header))
+	inlog.Infof("header: %s\n", utils.MarshalPrintAll(p.H))
 	inlog.Infof("table: %s\n", utils.MarshalPrintAll(p.PropTable))
 
-	lvUpMeta := p.Header.GetByName("lv_up")
+	lvUpMeta := p.H.GetByName("lv_up")
 	if !assert.NotNil(t, lvUpMeta, "lv_up col cannot found") {
 		return
 	}

@@ -104,7 +104,7 @@ GetColPID:
 
 	preset := NewPreset()
 
-	headerStack := []*ColMetaTable{preset.Header}
+	headerStack := []*ColHeader{preset.H}
 	colPush := func(pairing bool, event pmark.Pair[Col]) {
 		if !pairing {
 			newHeader := NewColHeader()
@@ -126,17 +126,11 @@ GetColPID:
 		ty := pseal.SymToType(sym)
 
 		if ty == pseal.TyNil {
-			inlog.Warnf("warn: try parse col header sealTy of row %v col %v skipped\n", rowCount, c)
+			inlog.Warnf("try parse col header sealTy of row %v col %v skipped\n", rowCount, c)
 			continue
 		}
 
-		cMeta := &ColMeta{
-			Type:       ty,
-			Sym:        sym,
-			Name:       strs.Conv2Snake(lineColName[c]),
-			Constraint: lineConstraint[c],
-		}
-		typer.SliceLast(headerStack).Set(c, cMeta) // todo: 第一个 Mark 留在父结构里
+		typer.SliceLast(headerStack).Set(c, NewColMeta(c, sym, lineColName[c], lineConstraint[c])) // todo: 第一个 Mark 留在父结构里
 
 		if ty == pseal.TyMark {
 			err := marksStack.Consume(pmark.Mark(sym), c, colPush)
@@ -162,14 +156,14 @@ GetColPID:
 			str := l[c]
 			val, err := meta.Type.SealStr(str)
 			if err != nil {
-				inlog.Warnf("warn: sealbystr of row %v col %v failed, ty= %v, str= %v, got err %v \n", rowCount, c, meta.Type, str, err)
+				inlog.Warnf("seal_by_str of row %v col %v failed, ty= %v, str= %v, got err %v \n", rowCount, c, meta.Type, str, err)
 				continue
 			}
 			prop.p[c] = val
 		}
 		pid, err := prop.Get(colPID).PID()
 		if err != nil {
-			inlog.Warnf("warn: read pid of row %v col %v failed, got err %v \n", rowCount, colPID, err)
+			inlog.Warnf("read pid of row %v col %v failed, got err %v \n", rowCount, colPID, err)
 			continue
 		}
 		if pid == -1 {
