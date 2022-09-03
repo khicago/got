@@ -25,3 +25,8 @@ func (p *Preset) Query(pid int64, col Col) pseal.Seal {
 	}
 	return seal.Get(col)
 }
+
+func (p *Preset) QueryS(pid int64, path []Col) pseal.Seal {
+	// todo
+	panic("to implement this")
+}

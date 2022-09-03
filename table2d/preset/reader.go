@@ -100,59 +100,26 @@ GetColPID:
 		return nil, err
 	}
 
-	marksStack := pmark.NewStack[Col](colMax)
-
 	preset := NewPreset()
 
-	headerStack := []*ColHeader{preset.H}
-	colPush := func(pairing bool, event pmark.Pair[Col]) {
-		if !pairing {
-			newHeader := NewColHeader()
-			typer.SliceLast(headerStack).Sub[event.LVal] = newHeader
-			headerStack = append(headerStack, newHeader)
-
-			inlog.Debugf("------------ header stack in %#v, %v\n", event, headerStack)
-			return
-		}
-		headerStack = headerStack[:len(headerStack)-1]
-
-		inlog.Debugf("------------ header stack out %#v, %v\n", event, headerStack)
-	}
-
-	// try to generate header
-	inlog.Debugf("colMax is %v\n", colMax)
-	for c := colPID; c <= colMax; c++ {
-		sym := strs.TrimLower(lineOfMeta[c])
-		ty := pseal.SymToType(sym)
-
-		if ty == pseal.TyNil {
-			inlog.Warnf("try parse col header sealTy of row %v col %v skipped\n", rowCount, c)
-			continue
-		}
-
-		typer.SliceLast(headerStack).Set(c, NewColMeta(c, sym, lineColName[c], lineConstraint[c])) // todo: 第一个 Mark 留在父结构里
-
-		if ty == pseal.TyMark {
-			err := marksStack.Consume(pmark.Mark(sym), c, colPush)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	childrenCols := make(map[Col]pmark.Pair[Col], 0)
-	for i, p := range marksStack.Results {
-		childrenCols[p.LVal] = marksStack.Results[i]
+	headerRoot, marksStack, err2 := ParseHeader(preset.H, colPID, colMax, lineOfMeta, lineColName, lineConstraint)
+	if err2 != nil {
+		return nil, err2
 	}
 	// try load data values
 
-	inlog.Debugf("- header stack %#v", headerStack)
+	childrenCols := make(PropChildIndex)
+	for i, p := range marksStack.Results {
+		childrenCols[p.LVal] = marksStack.Results[i]
+	}
+
+	inlog.Debugf("- header root %#v", headerRoot)
 	l, e := read()
 	for ; l != nil; l, e = read() {
 		inlog.Debugf("line, %v \n", l)
 		prop := NewProp()
 		prop.childrenCols = childrenCols
-		for c, meta := range typer.SliceLast(headerStack).Def {
+		for c, meta := range headerRoot.Def {
 			str := l[c]
 			val, err := meta.Type.SealStr(str)
 			if err != nil {
@@ -176,4 +143,50 @@ GetColPID:
 	}
 
 	return preset, nil
+}
+
+func ParseHeader(root *ColHeader, colFrom, colTo int, lineOfMeta []string, lineColName []string, lineConstraint []string) (
+	*ColHeader, *pmark.Stack[Col], error) {
+
+	headerStack := []*ColHeader{root}
+	colPush := func(pairing bool, event pmark.Pair[Col]) {
+		if !pairing {
+			newHeader := NewColHeader()
+			typer.SliceLast(headerStack).Sub[event.LVal] = newHeader
+			headerStack = append(headerStack, newHeader)
+
+			inlog.Debugf("------------ header stack in %#v, %v\n", event, headerStack)
+			return
+		}
+		headerStack = headerStack[:len(headerStack)-1]
+
+		inlog.Debugf("------------ header stack out %#v, %v\n", event, headerStack)
+	}
+
+	// try to generate header
+	inlog.Debugf("colMax is %v\n", colTo)
+	marksStack := pmark.NewStack[Col](colTo - colFrom)
+	for c := colFrom; c <= colTo; c++ {
+		sym := strs.TrimLower(lineOfMeta[c])
+		ty := pseal.SymToType(sym)
+
+		if ty == pseal.TyNil {
+			inlog.Warnf("try parse col header sealTy of col %v skipped\n", c)
+			continue
+		}
+
+		typer.SliceLast(headerStack).Set(c, NewColMeta(c, sym, lineColName[c], lineConstraint[c])) // todo: 第一个 Mark 留在父结构里
+		if ty == pseal.TyMark {
+			err := marksStack.Consume(pmark.Mark(sym), c, colPush)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+
+	if len(headerStack) != 1 {
+		return nil, nil, errors.New("parse header failed, stack are not cleared")
+	}
+
+	return headerStack[0], marksStack, nil
 }
