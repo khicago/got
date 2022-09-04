@@ -2,6 +2,8 @@ package preset
 
 import (
 	"encoding/json"
+	"github.com/khicago/got/table2d/preset/pmark"
+	"github.com/khicago/got/util/inlog"
 	"github.com/khicago/got/util/strs"
 	"github.com/khicago/got/util/typer"
 	"sort"
@@ -10,6 +12,12 @@ import (
 )
 
 type (
+	ColHeaderChild struct {
+		*ColHeader
+		pmark.Pair[Col]
+	}
+
+	ColHeaderChildren map[Col]ColHeaderChild
 
 	// The ColHeader is a nested structure of ColMeta information tables
 	//and is also optimised for queries by means of cached indexes etc. A
@@ -20,14 +28,14 @@ type (
 		// this ColHeader
 		Def map[Col]*ColMeta `json:"def"`
 
-		// Sub handle children of the meta table
+		// Children handle children of the meta table
 		// why Col data needs to be structured:
 		// - Although it is possible to structure the query in the col
 		// header and prop, it does not solve the renaming problem.
 		// In practice, especially in the case of lists with structures
 		// inside them, there are problems with renaming, so it would
 		// be too complicated to use query indexing to make it.
-		Sub map[Col]*ColHeader `json:"sub"`
+		Children ColHeaderChildren `json:"sub"`
 
 		nameColIndex map[string]Col
 	}
@@ -37,16 +45,17 @@ type (
 	//	Set(col Col, colDef *ColMeta) IColMetaTable
 	//	ColOf(name string) Col
 	//	Get(col Col) *ColMeta
-	//	GetByName(name string) *ColMeta
+	//	GetByPth(name string) *ColMeta
 	//}
 
 )
 
 func NewColHeader() *ColHeader {
 	return &ColHeader{
-		Def:          make(map[Col]*ColMeta),
+		Def:      make(map[Col]*ColMeta),
+		Children: make(ColHeaderChildren),
+
 		nameColIndex: make(map[string]Col),
-		Sub:          make(map[Col]*ColHeader),
 	}
 }
 
@@ -74,12 +83,55 @@ func (header *ColHeader) Get(col Col) *ColMeta {
 	return header.Def[col]
 }
 
-func (header *ColHeader) GetByName(name string) *ColMeta {
-	col := header.ColOf(name)
+func (header *ColHeader) GetByIndex(index int) *ColMeta {
+	keys := typer.Keys(header.Def)
+	sort.Ints(keys)
+
+	return header.Def[keys[index]]
+}
+
+func (hChild *ColHeaderChild) GetByMark(indexOrCol string) *ColMeta {
+	if hChild.Pair.L == "[" {
+		ind, err := strconv.Atoi(indexOrCol)
+		if err != nil {
+			return nil
+		}
+		return hChild.GetByIndex(ind)
+	}
+	col := hChild.ColOf(indexOrCol) // be mark for child
 	if col == InvalidCol {
 		return nil
 	}
-	return header.Get(col)
+	return hChild.Get(col)
+}
+
+func (header *ColHeader) GetByPth(pth ...string) *ColMeta {
+	var (
+		recursive = ColHeaderChild{
+			Pair: pmark.Pair[Col]{
+				L: "{",
+				R: "}",
+			},
+			ColHeader: header,
+		}
+		node *ColMeta
+	)
+	for i := range pth {
+		node = recursive.GetByMark(pth[i])
+		inlog.Debugf("-GetByPth> recursive node (i=%d),\tpth=%v,\tnode=`%v`\n", i, pth, node)
+		if node == nil || i == len(pth)-1 {
+			inlog.Debugf("-GetByPth> recursive node (final),\tpth=%v,\tnode=`%v`\n", pth, node)
+			break
+		}
+
+		child, ok := recursive.Children[node.Col]
+		if !ok {
+			return nil
+		}
+		recursive = child
+
+	}
+	return node
 }
 
 var (
@@ -93,7 +145,7 @@ var (
 func (header *ColHeader) MarshalJSON() ([]byte, error) {
 	type marshal struct {
 		Metas []string
-		Sub   map[Col]*ColHeader
+		Sub   ColHeaderChildren
 	}
 
 	strs := make([]string, 0, len(header.Def))
@@ -105,14 +157,14 @@ func (header *ColHeader) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(marshal{
 		Metas: strs,
-		Sub:   header.Sub,
+		Sub:   header.Children,
 	})
 }
 
 func (header *ColHeader) UnmarshalJSON(bytes []byte) error {
 	type marshal struct {
 		Metas []string
-		Sub   map[Col]*ColHeader
+		Sub   ColHeaderChildren
 	}
 
 	input := marshal{}
@@ -137,4 +189,16 @@ func (header *ColHeader) UnmarshalJSON(bytes []byte) error {
 		header.Set(Col(col), meta)
 	}
 	return nil
+}
+
+func (header *ColHeader) ForeachCol(action func(colMeta *ColMeta), includeChildren bool) {
+	for _, def := range header.Def {
+		action(def)
+	}
+	if !includeChildren {
+		return
+	}
+	for _, child := range header.Children {
+		child.ForeachCol(action, true)
+	}
 }

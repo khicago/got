@@ -13,7 +13,7 @@ var (
 func Convert[T any](val any, defaultV T) (T, error) {
 	vv, ok := val.(T)
 	if !ok {
-		return defaultV, ErrPropertyType
+		return defaultV, fmt.Errorf("%w, cannot convert %v(type %T) to type %T", ErrPropertyType, val, val, defaultV)
 	}
 	return vv, nil
 }

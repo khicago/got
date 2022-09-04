@@ -80,10 +80,10 @@ func TestPresetReader(t *testing.T) {
 		return
 	}
 
-	inlog.Infof("header: %s\n", utils.MarshalIndentPrintAll(p.H))
+	inlog.Infof("header: %s\n", utils.MarshalIndentPrintAll(p.Headline))
 	inlog.Infof("table: %s\n", utils.MarshalPrintAll(p.PropTable))
 
-	lvUpMeta := p.H.GetByName("lv_up")
+	lvUpMeta := p.Headline.GetByPth("lv_up")
 	if !assert.NotNil(t, lvUpMeta, "lv_up col cannot found") {
 		return
 	}
@@ -92,7 +92,7 @@ func TestPresetReader(t *testing.T) {
 	if !assert.Equal(t, 1, lvUpCol, "lv_up col error") {
 		return
 	}
-	v, err := p.Query(10001, lvUpCol).ID()
+	v, err := p.QueryByCol(10001, lvUpCol).ID()
 	if !assert.Nil(t, err, "get lvUpCol of 10001 failed") {
 		return
 	}
@@ -104,10 +104,10 @@ func TestPresetReaderLines(t *testing.T) {
 	if !assert.Nil(t, err, "read by lineReader failed") {
 		return
 	}
-	inlog.Infof("header: %s\n", utils.MarshalIndentPrintAll(p.H))
+	inlog.Infof("header: %s\n", utils.MarshalIndentPrintAll(p.Headline))
 	inlog.Infof("table: %s\n", utils.MarshalPrintAll(p.PropTable))
 
-	lvUpMeta := p.H.GetByName("lv_up")
+	lvUpMeta := p.Headline.GetByPth("lv_up")
 	if !assert.NotNil(t, lvUpMeta, "lv_up col cannot found") {
 		return
 	}
@@ -116,9 +116,29 @@ func TestPresetReaderLines(t *testing.T) {
 	if !assert.Equal(t, 1, lvUpCol, "lv_up col error") {
 		return
 	}
-	v, err := p.Query(10001, lvUpCol).ID()
+	v, err := p.QueryByCol(10001, lvUpCol).ID()
 	if !assert.Nil(t, err, "get lvUpCol of 10001 failed") {
 		return
 	}
 	assert.Equal(t, int64(10002), v, "get lvUpCol of 10001 val error")
+
+	InitItems0 := p.Query(10001, "init_items", "0")
+	if !assert.NotNil(t, InitItems0, "init_items col cannot found") {
+		return
+	}
+	v, err = InitItems0.ID()
+	if !assert.Nil(t, err, "get init_items[0] of 10001 failed") {
+		return
+	}
+	assert.Equal(t, int64(1010001), v, "get init_items[0] of 10001 val error")
+
+	InnerLvUpItemID := p.QueryS(10001, "inner_lv_up_item/lv_up")
+	if !assert.NotNil(t, InnerLvUpItemID, "inner_lv_up_item/lv_up col cannot found") {
+		return
+	}
+	v, err = InnerLvUpItemID.ID()
+	if !assert.Nil(t, err, "get inner_lv_up_item/lv_up of 10001 failed") {
+		return
+	}
+	assert.Equal(t, int64(1010003), v, "get inner_lv_up_item/lv_up of 10001 val error")
 }

@@ -13,10 +13,10 @@ func TestFile(t *testing.T) {
 		return
 	}
 
-	inlog.Infof("header: %s\n", utils.MarshalPrintAll(p.H))
+	inlog.Infof("header: %s\n", utils.MarshalPrintAll(p.Headline))
 	inlog.Infof("table: %s\n", utils.MarshalPrintAll(p.PropTable))
 
-	lvUpMeta := p.H.GetByName("lv_up")
+	lvUpMeta := p.Headline.GetByPth("lv_up")
 	if !assert.NotNil(t, lvUpMeta, "lv_up col cannot found") {
 		return
 	}
@@ -25,13 +25,13 @@ func TestFile(t *testing.T) {
 	if !assert.Equal(t, 1, lvUpCol, "lv_up col error") {
 		return
 	}
-	v, err := p.Query(10001, lvUpCol).ID()
+	v, err := p.QueryByCol(10001, lvUpCol).ID()
 	if !assert.Nil(t, err, "get lvUpCol of 10001 failed") {
 		return
 	}
 	assert.Equal(t, int64(10002), v, "get lvUpCol of 10001 val error")
 
-	v, err = p.Query(10002, lvUpCol).ID()
+	v, err = p.QueryByCol(10002, lvUpCol).ID()
 	if !assert.Nil(t, err, "get lvUpCol of 10001 failed") {
 		return
 	}

@@ -102,12 +102,13 @@ GetColPID:
 
 	preset := NewPreset()
 
-	headerRoot, marksStack, err2 := ParseHeader(preset.H, colPID, colMax, lineOfMeta, lineColName, lineConstraint)
+	headerRoot, marksStack, err2 := ParseHeader(preset.Headline, colPID, colMax, lineOfMeta, lineColName, lineConstraint)
 	if err2 != nil {
 		return nil, err2
 	}
-	// try load data values
 
+	// try load data values
+	// 这个机制主要保证在没有 ColHeader 的时候, Props 自己能降级到支持平铺的结构访问
 	childrenCols := make(PropChildIndex)
 	for i, p := range marksStack.Results {
 		childrenCols[p.LVal] = marksStack.Results[i]
@@ -119,15 +120,16 @@ GetColPID:
 		inlog.Debugf("line, %v \n", l)
 		prop := NewProp()
 		prop.childrenCols = childrenCols
-		for c, meta := range headerRoot.Def {
-			str := l[c]
-			val, err := meta.Type.SealStr(str)
+		headerRoot.ForeachCol(func(colMeta *ColMeta) {
+			str := l[colMeta.Col]
+			val, err := colMeta.Type.SealStr(str)
 			if err != nil {
-				inlog.Warnf("seal_by_str of row %v col %v failed, ty= %v, str= %v, got err %v \n", rowCount, c, meta.Type, str, err)
-				continue
+				inlog.Warnf("seal_by_str of row %v col %v failed, str= %v, got err %v \n", rowCount, colMeta, str, err)
+				return
 			}
-			prop.p[c] = val
-		}
+			prop.p[colMeta.Col] = val
+		}, true)
+
 		pid, err := prop.Get(colPID).PID()
 		if err != nil {
 			inlog.Warnf("read pid of row %v col %v failed, got err %v \n", rowCount, colPID, err)
@@ -150,16 +152,18 @@ func ParseHeader(root *ColHeader, colFrom, colTo int, lineOfMeta []string, lineC
 
 	headerStack := []*ColHeader{root}
 	colPush := func(pairing bool, event pmark.Pair[Col]) {
-		if !pairing {
-			newHeader := NewColHeader()
-			typer.SliceLast(headerStack).Sub[event.LVal] = newHeader
-			headerStack = append(headerStack, newHeader)
 
+		if !pairing {
+			child := NewColHeader()
+			typer.SliceLast(headerStack).Children[event.LVal] = ColHeaderChild{
+				ColHeader: child,
+				Pair:      event,
+			}
+			headerStack = append(headerStack, child)
 			inlog.Debugf("------------ header stack in %#v, %v\n", event, headerStack)
 			return
 		}
 		headerStack = headerStack[:len(headerStack)-1]
-
 		inlog.Debugf("------------ header stack out %#v, %v\n", event, headerStack)
 	}
 
@@ -175,7 +179,7 @@ func ParseHeader(root *ColHeader, colFrom, colTo int, lineOfMeta []string, lineC
 			continue
 		}
 
-		typer.SliceLast(headerStack).Set(c, NewColMeta(c, sym, lineColName[c], lineConstraint[c])) // todo: 第一个 Mark 留在父结构里
+		typer.SliceLast(headerStack).Set(c, NewColMeta(c, sym, lineColName[c], lineConstraint[c]))
 		if ty == pseal.TyMark {
 			err := marksStack.Consume(pmark.Mark(sym), c, colPush)
 			if err != nil {

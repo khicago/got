@@ -23,7 +23,11 @@ type (
 	// Prop
 	// implementation of IProp
 	Prop struct {
-		p            PropData
+		p PropData
+
+		// childrenCols 这个机制主要保证在没有 ColHeader 的时候, Props 自己能降级到支持平铺的结构访问
+		// 即也可以通过 Child 表达式，做到子结构的访问和便利等
+		// 当然, 这种情况下访问的 Child 其实是子孙节点
 		childrenCols PropChildIndex
 		keyIndex     []Col
 	}
