@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/khicago/got/internal/utils"
 	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/khicago/got/table2d/preset/pseal"
 	"github.com/khicago/got/table2d/tablety"
@@ -27,15 +28,15 @@ var (
 
 func assertRead[TVal any](reader tablety.LineReader[TVal], validator typer.Predicate[[]TVal]) ([]TVal, error) {
 	ln, err := reader.Read()
-	inlog.Debugf("-- READ %#v %v\n", ln, err)
+	inlog.Debugf("----- READ %#v %v\n", ln, err)
 	if err != nil { // error occurred, maybe io.EOF
 		return nil, err
 	}
 	if ln == nil || validator == nil { // ended
-		return nil, nil
+		return ln, nil
 	}
 	if !validator(ln) {
-		return nil, ErrPresetFormatError
+		return nil, fmt.Errorf("%w, validate failed", ErrPresetFormatError)
 	}
 	return ln, nil
 }
@@ -50,30 +51,34 @@ func Read(ctx context.Context, reader tablety.Table2DReader[string]) (*Preset, e
 }
 
 func ReadLines(ctx context.Context, reader tablety.LineReader[string]) (*Preset, error) {
-	rowCount, colPID, colMax := 0, -1, 0
+	rowCount, colPID, colLen := 0, -1, 0
 
 	// read returns nil, nil when finished
 	read := func() (ln []string, err error) {
-		rowCount++ // start from 1
-		ln, err = assertRead(reader, func(v []string) bool { return len(v) >= colMax })
+		rowCount++                        // start from 1
+		ln, err = assertRead(reader, nil) //
+		// func(v []string) bool { return len(v) >= colLen }) // warning, not blocking
 		if err != nil {
-			inlog.Debugf("- ln %d fin at, %#v, %s\n", rowCount, ln, err)
+			inlog.Debugf("ln(%d) fin at, %#v, %s\n", rowCount, ln, err)
 			if err == io.EOF {
-				return nil, nil
+				return nil, io.EOF
 			}
 			return nil, fmt.Errorf("%w, row= %v", err, rowCount)
 		}
 
-		inlog.Debug("- ln", rowCount, ln)
+		inlog.Debugf("ln(%d) result: %v ;\n", rowCount, ln)
 		return ln, nil
 	}
 
-	var lineOfMeta []string = nil
+	var (
+		lineOfMeta []string = nil
+		line       []string
+		err        error
+	)
+
 GetColPID:
-	for line, err := read(); typer.AssertNotNil(line); line, err = read() {
-		if err != nil {
-			return nil, err
-		}
+	for line, err = read(); err == nil; line, err = read() {
+		inlog.Debugf("- parse meta line, %v, %v, %v \n", line, typer.AssertNotNil(line), err)
 		for c, v := range line {
 			inlog.Debugf("sym pid got: %d, c %v sym %v\n", rowCount, c, v)
 			if !typer.IsZero(pseal.TyPID.SymMatch(v)) {
@@ -84,11 +89,14 @@ GetColPID:
 			}
 		}
 	}
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
 
 	if lineOfMeta == nil {
-		return nil, ErrPresetMarkError
+		return nil, fmt.Errorf("%w, got empty meta row", ErrPresetMarkError)
 	}
-	colMax = len(lineOfMeta) - 1
+	colLen = len(lineOfMeta)
 
 	lineConstraint, err := read()
 	if err != nil {
@@ -102,7 +110,8 @@ GetColPID:
 
 	preset := NewPreset()
 
-	headerRoot, marksStack, err2 := ParseHeader(preset.Headline, colPID, colMax, lineOfMeta, lineColName, lineConstraint)
+	headerRoot, marksStack, err2 := ParseHeader(preset.Headline, colPID, colLen-1,
+		lineOfMeta, typer.SlicePadRight(lineColName, colLen, ""), typer.SlicePadRight(lineConstraint, colLen, ""))
 	if err2 != nil {
 		return nil, err2
 	}
@@ -115,13 +124,16 @@ GetColPID:
 	}
 
 	inlog.Debugf("- header root %#v", headerRoot)
-	l, e := read()
-	for ; l != nil; l, e = read() {
-		inlog.Debugf("line, %v \n", l)
+	for line, err = read(); err == nil; line, err = read() {
+		inlog.Debugf("read data line, %v, %v \n", line, typer.AssertNotNil(line))
 		prop := NewProp()
 		prop.childrenCols = childrenCols
 		headerRoot.ForeachCol(func(colMeta *ColMeta) {
-			str := l[colMeta.Col]
+			if colMeta.Col >= len(line) {
+				inlog.Warnf("try parse col %d of prop row %v skipped, length %d is insufficient %d\n", colMeta, rowCount, len(line))
+				return
+			}
+			str := line[colMeta.Col]
 			val, err := colMeta.Type.SealStr(str)
 			if err != nil {
 				inlog.Warnf("seal_by_str of row %v col %v failed, str= %v, got err %v \n", rowCount, colMeta, str, err)
@@ -140,8 +152,8 @@ GetColPID:
 		}
 		(*preset.PropTable)[pid] = prop
 	}
-	if e != nil {
-		return nil, e
+	if err != nil && err != io.EOF {
+		return nil, err
 	}
 
 	return preset, nil
@@ -149,6 +161,10 @@ GetColPID:
 
 func ParseHeader(root *ColHeader, colFrom, colTo int, lineOfMeta []string, lineColName []string, lineConstraint []string) (
 	*ColHeader, *pmark.Stack[Col], error) {
+
+	inlog.Debugf("lineOfMeta(%d):\t\t %s\n", len(lineOfMeta), utils.MarshalPrintAll(lineOfMeta))
+	inlog.Debugf("lineColName(%d):\t %s\n", len(lineColName), utils.MarshalPrintAll(lineColName))
+	inlog.Debugf("lineConstraint(%d):\t %s\n", len(lineConstraint), utils.MarshalPrintAll(lineConstraint))
 
 	headerStack := []*ColHeader{root}
 	colPush := func(pairing bool, event pmark.Pair[Col]) {
