@@ -1,6 +1,9 @@
 package typer
 
-import "unsafe"
+import (
+	"reflect"
+	"unsafe"
+)
 
 func AssertType[TAssert, TVal any](v TVal) bool {
 	_, ok := any(v).(TAssert)
@@ -8,10 +11,21 @@ func AssertType[TAssert, TVal any](v TVal) bool {
 }
 
 func AssertNil(v any) bool {
-	return (*struct {
+	if (*struct {
 		p    uintptr
 		data unsafe.Pointer
-	})(unsafe.Pointer(&v)).data == nil
+	})(unsafe.Pointer(&v)).data == nil {
+		return true
+	}
+
+	valueOf := reflect.ValueOf(v)
+	k := valueOf.Kind()
+	switch k {
+	case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
+		return valueOf.IsNil()
+	default:
+		return v == nil
+	}
 }
 
 func AssertNotNil(v any) bool {

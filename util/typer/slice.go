@@ -34,6 +34,13 @@ func SliceLast[TSliceVal any](slice []TSliceVal) TSliceVal {
 	return slice[len(slice)-1]
 }
 
+func SlicePadRight[TSliceVal any](slice []TSliceVal, length int, padVal TSliceVal) []TSliceVal {
+	for len(slice) < length {
+		slice = append(slice, padVal)
+	}
+	return slice
+}
+
 // no needs to provide stack fn
 //
 //func SlicePushTail[TSliceVal any](slicePtr *[]TSliceVal, val TSliceVal) {

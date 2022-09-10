@@ -26,25 +26,29 @@ var (
 // go identity. Value can have four types:
 //
 // numeric: 	Any integer, floating point, or complex number
-//			  	that satisfies the go syntax
-//				e.g. `a=1,b=2.,c=.3,d=01 ,e=10e2`
-//				=> {a:1, b:2, c:.3, d:01, e:10e2}
+//
+//	  	that satisfies the go syntax
+//		e.g. `a=1,b=2.,c=.3,d=01 ,e=10e2`
+//		=> {a:1, b:2, c:.3, d:01, e:10e2}
 //
 // character: 	Any character enclosed by single-quotes `'`
-//				e.g. `char='x'` => {char:x}
+//
+//	e.g. `char='x'` => {char:x}
 //
 // boolean: 	Only the value of `false` means that the value
-//				is false, in other cases you can just write key,
-//				the `=value` part can be omitted
-//				e.g. `switch,window` => {switch:true, window:true}
+//
+//	is false, in other cases you can just write key,
+//	the `=value` part can be omitted
+//	e.g. `switch,window` => {switch:true, window:true}
 //
 // string: 		Any character enclosed by back-quotes ```, or
-//				any character concatenation to the next separator
-//				that is not one of the above cases, where
-//				consecutive whitespace characters are treated as
-//				a single whitespace character
-//				e.g. `str=this   is a string,str2=`quoted string``
-//				=> {str:"this is a string", str2="`quoted string`"}
+//
+//	any character concatenation to the next separator
+//	that is not one of the above cases, where
+//	consecutive whitespace characters are treated as
+//	a single whitespace character
+//	e.g. `str=this   is a string,str2=`quoted string``
+//	=> {str:"this is a string", str2="`quoted string`"}
 type (
 	KVStr string
 
@@ -129,7 +133,8 @@ func (kv KVStr) ForEach(fn func(key KeyName, val string)) error {
 // struct, or the snake form of its name.
 //
 // e.g. The field `FieldName` can be assigned by the
-//		key `FieldName` or `field_name`.
+//
+//	key `FieldName` or `field_name`.
 func (kv KVStr) ReflectTo(target any, queryOption *QueryOption) (extra map[string]string, err error) {
 	r := reflect.ValueOf(target)
 	if r.Kind() != reflect.Ptr {
