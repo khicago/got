@@ -1,6 +1,10 @@
 package tablety
 
-import "io"
+import (
+	"errors"
+	"github.com/khicago/got/util/typer"
+	"io"
+)
 
 type (
 	LineReader[TVal any] interface {
@@ -17,6 +21,10 @@ type (
 	}
 )
 
+var (
+	ErrValidateFailed = errors.New("validate failed")
+)
+
 func (cl *commonLineReader[TVal]) Read() ([]TVal, error) {
 	if cl.index >= len(cl.val) {
 		return nil, io.EOF
@@ -26,8 +34,22 @@ func (cl *commonLineReader[TVal]) Read() ([]TVal, error) {
 	return s, nil
 }
 
-func Warp[TVal any](val [][]TVal) LineReader[TVal] {
+func WarpLineReader[TVal any](val [][]TVal) LineReader[TVal] {
 	return &commonLineReader[TVal]{
 		val: val,
 	}
+}
+
+func AssertRead[TVal any](reader LineReader[TVal], validator typer.Predicate[[]TVal]) ([]TVal, error) {
+	ln, err := reader.Read()
+	if err != nil { // error occurred, maybe io.EOF
+		return nil, err
+	}
+	if ln == nil || validator == nil { // finished
+		return ln, nil
+	}
+	if !validator(ln) {
+		return nil, ErrValidateFailed
+	}
+	return ln, nil
 }

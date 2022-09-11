@@ -7,5 +7,5 @@ import (
 )
 
 func Strings2d(ctx context.Context, table [][]string) (*preset.Preset, error) {
-	return preset.ReadLines(ctx, tablety.Warp(table))
+	return preset.ReadLines(ctx, tablety.WarpLineReader(table))
 }

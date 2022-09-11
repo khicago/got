@@ -26,21 +26,6 @@ var (
 	ErrPresetFormatError = errors.New("preset format error")
 )
 
-func assertRead[TVal any](reader tablety.LineReader[TVal], validator typer.Predicate[[]TVal]) ([]TVal, error) {
-	ln, err := reader.Read()
-	inlog.Debugf("----- READ %#v %v\n", ln, err)
-	if err != nil { // error occurred, maybe io.EOF
-		return nil, err
-	}
-	if ln == nil || validator == nil { // ended
-		return ln, nil
-	}
-	if !validator(ln) {
-		return nil, fmt.Errorf("%w, validate failed", ErrPresetFormatError)
-	}
-	return ln, nil
-}
-
 // Read
 // |@    |ID     |INT           |Float    |[         |       |      ]|[        |{|          |#        |          |#    |          |}|]|BOOL  |STRING          |
 // |     |link(@)|test($>1,$<50)|test($%2)|link(item)|       |       |         | |link(wear)|         |link(wear)|     |link(wear)| | |      |enum(A|S|SR|SSR)|
@@ -55,18 +40,18 @@ func ReadLines(ctx context.Context, reader tablety.LineReader[string]) (*Preset,
 
 	// read returns nil, nil when finished
 	read := func() (ln []string, err error) {
-		rowCount++                        // start from 1
-		ln, err = assertRead(reader, nil) //
+		rowCount++ // start from 1
+		ln, err = tablety.AssertRead(reader, nil)
 		// func(v []string) bool { return len(v) >= colLen }) // warning, not blocking
 		if err != nil {
 			inlog.Debugf("ln(%d) fin at, %#v, %s\n", rowCount, ln, err)
-			if err == io.EOF {
-				return nil, io.EOF
+			if !errors.Is(err, io.EOF) {
+				err = fmt.Errorf("%w, row= %v", err, rowCount)
 			}
-			return nil, fmt.Errorf("%w, row= %v", err, rowCount)
+			return nil, err
 		}
 
-		inlog.Debugf("ln(%d) result: %v ;\n", rowCount, ln)
+		inlog.Debugf("ln(%d) line: %v ;\n", rowCount, ln)
 		return ln, nil
 	}
 
@@ -78,13 +63,12 @@ func ReadLines(ctx context.Context, reader tablety.LineReader[string]) (*Preset,
 
 GetColPID:
 	for line, err = read(); err == nil; line, err = read() {
-		inlog.Debugf("- parse meta line, %v, %v, %v \n", line, typer.AssertNotNil(line), err)
+		inlog.Debugf("- parse meta line, %v, %v\n", line, err)
 		for c, v := range line {
-			inlog.Debugf("sym pid got: %d, c %v sym %v\n", rowCount, c, v)
+			inlog.Debugf("! sym pid got: %d, c %v sym %v\n", rowCount, c, v)
 			if !typer.IsZero(pseal.TyPID.SymMatch(v)) {
 				lineOfMeta = line
 				colPID = c
-
 				break GetColPID
 			}
 		}
@@ -123,7 +107,7 @@ GetColPID:
 		childrenCols[p.LVal] = marksStack.Results[i]
 	}
 
-	inlog.Debugf("- header root %#v", headerRoot)
+	inlog.Debugf("[READER] start parse data, got header %s", utils.MarshalIndentPrintAll(headerRoot))
 	for line, err = read(); err == nil; line, err = read() {
 		inlog.Debugf("read data line, %v, %v \n", line, typer.AssertNotNil(line))
 		prop := NewProp()

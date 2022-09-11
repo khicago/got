@@ -10,11 +10,6 @@ package preset
 import "errors"
 
 var (
-	ErrColOutOfRange = errors.New("preset err: col out of range")
-	ErrPropertyNil   = errors.New("preset err: the property is nil")
-	ErrPropertyType  = errors.New("preset err: property type error")
-)
-
-const (
-	InvalidCol Col = -1
+	ErrPropertyNil  = errors.New("preset err: the property is nil")
+	ErrPropertyType = errors.New("preset err: property type error")
 )

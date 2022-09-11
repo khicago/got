@@ -13,8 +13,6 @@ import (
 )
 
 type (
-	Col = int
-
 	PropTable map[int64]*Prop // PID => Prop
 
 	PropData       map[Col]pseal.Seal

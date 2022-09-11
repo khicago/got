@@ -1,6 +1,10 @@
+# IDE Folder
 .idea
 .DS_Store
 .vs_code
+
+# Temp files
+~*.xlsx
 
 # Binaries for programs and plugins
 *.exe

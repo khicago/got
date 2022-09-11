@@ -10,6 +10,8 @@ import (
 )
 
 type (
+	Col = int
+
 	// ColMeta defines how this column is resolved, only the first Mark
 	// of the substructure is recorded in the upper ColMeta list
 	ColMeta struct {
@@ -37,6 +39,10 @@ type (
 		// processing, etc.
 		Constraint string
 	}
+)
+
+const (
+	InvalidCol Col = -1
 )
 
 func NewColMeta[TCol ~Col](col TCol, sym, name, constraint string) *ColMeta {
