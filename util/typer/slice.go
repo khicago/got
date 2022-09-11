@@ -1,5 +1,10 @@
 package typer
 
+import (
+	"golang.org/x/exp/constraints"
+	"sort"
+)
+
 func SliceFirst[TVal comparable](slice []TVal, val TVal) int {
 	for i, v := range slice {
 		if v == val {
@@ -34,11 +39,24 @@ func SliceLast[TSliceVal any](slice []TSliceVal) TSliceVal {
 	return slice[len(slice)-1]
 }
 
+func SliceTryGet[TSliceVal any](slice []TSliceVal, i int, defaultVal TSliceVal) TSliceVal {
+	if i < 0 || i >= len(slice) {
+		return defaultVal
+	}
+	return slice[i]
+}
+
 func SlicePadRight[TSliceVal any](slice []TSliceVal, length int, padVal TSliceVal) []TSliceVal {
 	for len(slice) < length {
 		slice = append(slice, padVal)
 	}
 	return slice
+}
+
+func SliceSort[TSliceVal constraints.Ordered](slice []TSliceVal) {
+	sort.Slice(slice, func(i, j int) bool {
+		return slice[i] < slice[j]
+	})
 }
 
 // no needs to provide stack fn

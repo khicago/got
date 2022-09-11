@@ -18,6 +18,7 @@ type (
 	DelegateMap[TIn any, TOut any] DelegateFunc1[TIn, TOut]
 
 	Predicate[TVal any] DelegateMap[TVal, bool]
+	Compare[TVal any]   func(TVal, TVal) int
 )
 
 // Partial
