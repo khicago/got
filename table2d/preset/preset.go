@@ -1,6 +1,8 @@
 package preset
 
 import (
+	"errors"
+	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pseal"
 	"github.com/khicago/got/util/inlog"
 	"strings"
@@ -8,19 +10,24 @@ import (
 
 type (
 	Preset struct {
-		Headline  *ColHeader
+		Headline  *pcol.ColHeader
 		PropTable *PropTable
 	}
 )
 
+var (
+	ErrPropertyNil  = errors.New("preset err: the property is nil")
+	ErrPropertyType = errors.New("preset err: property type error")
+)
+
 func NewPreset() *Preset {
 	return &Preset{
-		Headline:  NewColHeader(),
+		Headline:  pcol.NewColHeader(),
 		PropTable: &PropTable{},
 	}
 }
 
-func (p *Preset) QueryByCol(pid int64, col Col) pseal.Seal {
+func (p *Preset) QueryByCol(pid int64, col pcol.Col) pseal.Seal {
 	seal, ok := (*p.PropTable)[pid]
 	if !ok {
 		return pseal.Nil

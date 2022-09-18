@@ -1,6 +1,7 @@
 package pseal
 
 import (
+	"fmt"
 	"github.com/khicago/got/util/strs"
 	"github.com/khicago/got/util/typer"
 )
@@ -135,4 +136,30 @@ func SymToType(sym string) Type {
 		}
 	}
 	return TyNil
+}
+
+func (ty Type) TypeName() string {
+	return fmt.Sprintf("%T", ty.Default())
+}
+
+func (ty Type) SealCallName() string {
+	switch ty {
+	case TyPID:
+		return "PID"
+	case TyID:
+		return "ID"
+	case TyBool:
+		return "Bool"
+	case TyInt:
+		return "Int"
+	case TyFloat:
+		return "Float"
+	case TyString:
+		return "String"
+	case TyMemo:
+		return "Memo"
+	case TyMark:
+		return "Mark"
+	}
+	return "Val"
 }

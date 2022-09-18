@@ -1,4 +1,4 @@
-package preset
+package pcol
 
 import (
 	"encoding/json"
@@ -48,6 +48,11 @@ type (
 	//	GetByPth(name string) *ColMeta
 	//}
 
+)
+
+var (
+	_ json.Marshaler   = &ColHeader{}
+	_ json.Unmarshaler = &ColHeader{}
 )
 
 func NewColHeader() *ColHeader {
@@ -134,10 +139,17 @@ func (header *ColHeader) GetByPth(pth ...string) *ColMeta {
 	return node
 }
 
-var (
-	_ json.Marshaler = &ColHeader{}
-	//_ json.Unmarshaler = &ColHeader{}
-)
+func (header *ColHeader) ForeachCol(action func(colMeta *ColMeta), includeChildren bool) {
+	for _, def := range header.Def {
+		action(def)
+	}
+	if !includeChildren {
+		return
+	}
+	for _, child := range header.Children {
+		child.ForeachCol(action, true)
+	}
+}
 
 // MarshalJSON
 //
@@ -174,7 +186,7 @@ func (header *ColHeader) UnmarshalJSON(bytes []byte) error {
 	for _, str := range input.Metas {
 		values := strings.Split(str, ":")[0:]
 		if len(values) < 4 {
-			return ErrSealFormatError
+			return ErrColHeaderUnMarshalFmtFailed
 		}
 		col, err := strconv.ParseInt(values[0], 10, 64)
 		if err != nil {
@@ -189,16 +201,4 @@ func (header *ColHeader) UnmarshalJSON(bytes []byte) error {
 		header.Set(Col(col), meta)
 	}
 	return nil
-}
-
-func (header *ColHeader) ForeachCol(action func(colMeta *ColMeta), includeChildren bool) {
-	for _, def := range header.Def {
-		action(def)
-	}
-	if !includeChildren {
-		return
-	}
-	for _, child := range header.Children {
-		child.ForeachCol(action, true)
-	}
 }

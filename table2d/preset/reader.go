@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/khicago/got/internal/utils"
-	"github.com/khicago/got/table2d/preset/pmark"
+	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pseal"
 	"github.com/khicago/got/table2d/tablety"
 	"github.com/khicago/got/util/inlog"
-	"github.com/khicago/got/util/strs"
 	"github.com/khicago/got/util/typer"
 	"io"
 )
@@ -17,7 +16,7 @@ import (
 type (
 	// Raw
 	// - 读入的原始行
-	Raw      map[Col]string
+	Raw      map[pcol.Col]string
 	RawTable []Raw
 )
 
@@ -93,9 +92,7 @@ GetColPID:
 	}
 
 	preset := NewPreset()
-
-	headerRoot, marksStack, err2 := ParseHeader(preset.Headline, colPID, colLen-1,
-		lineOfMeta, typer.SlicePadRight(lineColName, colLen, ""), typer.SlicePadRight(lineConstraint, colLen, ""))
+	marksStack, err2 := preset.Headline.ParseHeader(colPID, colLen-1, lineOfMeta, lineColName, lineConstraint)
 	if err2 != nil {
 		return nil, err2
 	}
@@ -107,12 +104,12 @@ GetColPID:
 		childrenCols[p.LVal] = marksStack.Results[i]
 	}
 
-	inlog.Debugf("[READER] start parse data, got header %s", utils.MarshalIndentPrintAll(headerRoot))
+	inlog.Debugf("[READER] start parse data, got header %s", utils.MarshalIndentPrintAll(preset.Headline))
 	for line, err = read(); err == nil; line, err = read() {
 		inlog.Debugf("read data line, %v, %v \n", line, typer.AssertNotNil(line))
 		prop := NewProp()
 		prop.childrenCols = childrenCols
-		headerRoot.ForeachCol(func(colMeta *ColMeta) {
+		preset.Headline.ForeachCol(func(colMeta *pcol.ColMeta) {
 			if colMeta.Col >= len(line) {
 				inlog.Warnf("try parse col %d of prop row %v skipped, length %d is insufficient %d\n", colMeta, rowCount, len(line))
 				return
@@ -141,56 +138,4 @@ GetColPID:
 	}
 
 	return preset, nil
-}
-
-func ParseHeader(root *ColHeader, colFrom, colTo int, lineOfMeta []string, lineColName []string, lineConstraint []string) (
-	*ColHeader, *pmark.Stack[Col], error) {
-
-	inlog.Debugf("lineOfMeta(%d):\t\t %s\n", len(lineOfMeta), utils.MarshalPrintAll(lineOfMeta))
-	inlog.Debugf("lineColName(%d):\t %s\n", len(lineColName), utils.MarshalPrintAll(lineColName))
-	inlog.Debugf("lineConstraint(%d):\t %s\n", len(lineConstraint), utils.MarshalPrintAll(lineConstraint))
-
-	headerStack := []*ColHeader{root}
-	colPush := func(pairing bool, event pmark.Pair[Col]) {
-
-		if !pairing {
-			child := NewColHeader()
-			typer.SliceLast(headerStack).Children[event.LVal] = ColHeaderChild{
-				ColHeader: child,
-				Pair:      event,
-			}
-			headerStack = append(headerStack, child)
-			inlog.Debugf("------------ header stack in %#v, %v\n", event, headerStack)
-			return
-		}
-		headerStack = headerStack[:len(headerStack)-1]
-		inlog.Debugf("------------ header stack out %#v, %v\n", event, headerStack)
-	}
-
-	// try to generate header
-	inlog.Debugf("colMax is %v\n", colTo)
-	marksStack := pmark.NewStack[Col](colTo - colFrom)
-	for c := colFrom; c <= colTo; c++ {
-		sym := strs.TrimLower(lineOfMeta[c])
-		ty := pseal.SymToType(sym)
-
-		if ty == pseal.TyNil {
-			inlog.Warnf("try parse col header sealTy of col %v skipped\n", c)
-			continue
-		}
-
-		typer.SliceLast(headerStack).Set(c, NewColMeta(c, sym, lineColName[c], lineConstraint[c]))
-		if ty == pseal.TyMark {
-			err := marksStack.Consume(pmark.Mark(sym), c, colPush)
-			if err != nil {
-				return nil, nil, err
-			}
-		}
-	}
-
-	if len(headerStack) != 1 {
-		return nil, nil, errors.New("parse header failed, stack are not cleared")
-	}
-
-	return headerStack[0], marksStack, nil
 }

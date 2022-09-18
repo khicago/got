@@ -1,4 +1,4 @@
-package preset
+package pcol
 
 import (
 	"encoding/json"
@@ -76,7 +76,7 @@ func (c *ColMeta) UnmarshalJSON(bytes []byte) error {
 	str := string(bytes)
 	values := strings.Split(str, ":")[0:]
 	if len(values) < 4 {
-		return ErrSealFormatError
+		return ErrColMetaUnMarshalFmtFailed
 	}
 	col, err := strconv.Atoi(values[0])
 	if err != nil {

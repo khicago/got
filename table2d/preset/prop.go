@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/khicago/got/table2d/preset/pseal"
 	"github.com/khicago/got/util/typer"
@@ -15,8 +16,8 @@ import (
 type (
 	PropTable map[int64]*Prop // PID => Prop
 
-	PropData       map[Col]pseal.Seal
-	PropChildIndex map[Col]pmark.Pair[Col]
+	PropData       map[pcol.Col]pseal.Seal
+	PropChildIndex map[pcol.Col]pmark.Pair[pcol.Col]
 
 	// Prop
 	// implementation of IProp
@@ -27,27 +28,27 @@ type (
 		// 即也可以通过 Child 表达式，做到子结构的访问和便利等
 		// 当然, 这种情况下访问的 Child 其实是子孙节点
 		childrenCols PropChildIndex
-		keyIndex     []Col
+		keyIndex     []pcol.Col
 	}
 
 	IProp interface {
 		Len() int
-		Has(col Col) bool
-		Get(col Col) pseal.Seal
+		Has(col pcol.Col) bool
+		Get(col pcol.Col) pseal.Seal
 
 		// Child
 		// get a descendant accessor
-		Child(col Col) (IProp, error)
+		Child(col pcol.Col) (IProp, error)
 
 		// ForEach
 		// ordered traversal, indexes are rebuilt when index length is not equal to data length
-		ForEach(fn typer.DelegateAction2[Col, pseal.Seal])
+		ForEach(fn typer.DelegateAction2[pcol.Col, pseal.Seal])
 	}
 
 	MarkPairProp struct {
-		pmark.Pair[Col]
+		pmark.Pair[pcol.Col]
 		prop    IProp
-		ValCols []Col
+		ValCols []pcol.Col
 	}
 )
 
@@ -64,7 +65,7 @@ var (
 func NewProp() *Prop {
 	return &Prop{
 		p:            make(PropData),
-		childrenCols: make(map[Col]pmark.Pair[Col], 0),
+		childrenCols: make(map[pcol.Col]pmark.Pair[pcol.Col], 0),
 	}
 }
 
@@ -98,7 +99,7 @@ func (p *Prop) UnmarshalJSON(bytes []byte) error {
 		if err != nil {
 			return err
 		}
-		p.p[Col(col)] = s
+		p.p[pcol.Col(col)] = s
 	}
 	return nil
 }
@@ -112,12 +113,12 @@ func (p *Prop) Len() int {
 	return len(p.p)
 }
 
-func (p *Prop) Has(col Col) (ok bool) {
+func (p *Prop) Has(col pcol.Col) (ok bool) {
 	_, ok = (p.p)[col]
 	return
 }
 
-func (p *Prop) Get(col Col) pseal.Seal {
+func (p *Prop) Get(col pcol.Col) pseal.Seal {
 	v, ok := (p.p)[col]
 	if !ok {
 		return pseal.Nil
@@ -125,7 +126,7 @@ func (p *Prop) Get(col Col) pseal.Seal {
 	return v
 }
 
-func (p *Prop) ForEach(fn typer.DelegateAction2[Col, pseal.Seal]) {
+func (p *Prop) ForEach(fn typer.DelegateAction2[pcol.Col, pseal.Seal]) {
 	if len(p.keyIndex) != p.Len() {
 		keys := typer.Keys(p.p)
 		sort.Ints(keys)
@@ -139,7 +140,7 @@ func (p *Prop) ForEach(fn typer.DelegateAction2[Col, pseal.Seal]) {
 
 // Child
 // In fact, the current implementation can be described as a `descendant`
-func (p *Prop) Child(col Col) (IProp, error) {
+func (p *Prop) Child(col pcol.Col) (IProp, error) {
 	seal := p.Get(col)
 	switch seal.Type() {
 	case pseal.TyNil:
@@ -170,28 +171,28 @@ func (m MarkPairProp) Len() int {
 	return len(m.ValCols)
 }
 
-func (m MarkPairProp) colInside(col Col) bool {
+func (m MarkPairProp) colInside(col pcol.Col) bool {
 	if col > m.LVal && col < m.RVal {
 		return false
 	}
 	return true
 }
 
-func (m MarkPairProp) Has(col Col) bool {
+func (m MarkPairProp) Has(col pcol.Col) bool {
 	if !m.colInside(col) {
 		return false
 	}
 	return m.prop.Has(col)
 }
 
-func (m MarkPairProp) Get(col Col) pseal.Seal {
+func (m MarkPairProp) Get(col pcol.Col) pseal.Seal {
 	if !m.colInside(col) {
 		return pseal.Nil
 	}
 	return m.prop.Get(col)
 }
 
-func (m MarkPairProp) Child(col Col) (IProp, error) {
+func (m MarkPairProp) Child(col pcol.Col) (IProp, error) {
 	if !typer.SliceContains(m.ValCols, col) {
 		return nil, ErrPropertyNil
 	}
@@ -199,8 +200,8 @@ func (m MarkPairProp) Child(col Col) (IProp, error) {
 	return m.prop.Child(col)
 }
 
-func (m MarkPairProp) ForEach(fn typer.DelegateAction2[Col, pseal.Seal]) {
-	m.prop.ForEach(func(c Col, s pseal.Seal) {
+func (m MarkPairProp) ForEach(fn typer.DelegateAction2[pcol.Col, pseal.Seal]) {
+	m.prop.ForEach(func(c pcol.Col, s pseal.Seal) {
 		if c <= m.LVal || c >= m.RVal {
 			return
 		}

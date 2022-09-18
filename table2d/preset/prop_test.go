@@ -1,6 +1,7 @@
 package preset
 
 import (
+	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/khicago/got/util/inlog"
 	"testing"
@@ -26,7 +27,7 @@ func TestPreset(t *testing.T) {
 			10: pseal.ID(200303), // id
 		},
 		childrenCols: PropChildIndex{
-			4: pmark.Pair[Col]{
+			4: pmark.Pair[pcol.Col]{
 				L:    "{",
 				R:    "}",
 				LVal: 4,
@@ -55,7 +56,7 @@ func TestPreset(t *testing.T) {
 	assert.Nil(t, err, "convert list failed")
 
 	testValInd := 0
-	vList.ForEach(func(col Col, seal pseal.Seal) {
+	vList.ForEach(func(col pcol.Col, seal pseal.Seal) {
 		testValInd++
 		vListVal, err := seal.Int()
 		assert.Nil(t, err, "convert list failed")
