@@ -19,8 +19,8 @@ func AtLeastOnce() (wait func(), exit func()) {
 // closer can be called multi-times
 // the quiting of HoldGo dose not means that the fn are finished
 func HoldGo(fn func(closer ErrorHandler)) (err error) {
-	wait, exit := AtLeastOnce()
-	handleErrAndExit := GetCombinedErrHandler(GetRewriteErrHandler(&err), GetWrapVoidErrHandler(exit))
+	wait, exitHolder := AtLeastOnce()
+	handleErrAndExit := GetCombinedErrHandler(GetRewriteErrHandler(&err), GetWrapVoidErrHandler(exitHolder))
 	handleErrAndExit.SafeGo(func() {
 		fn(handleErrAndExit)
 	})

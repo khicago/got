@@ -7,6 +7,7 @@ import (
 	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/khicago/got/table2d/preset/pseal"
+	"github.com/khicago/got/util/delegate"
 	"github.com/khicago/got/util/typer"
 	"sort"
 	"strconv"
@@ -42,7 +43,7 @@ type (
 
 		// ForEach
 		// ordered traversal, indexes are rebuilt when index length is not equal to data length
-		ForEach(fn typer.DelegateAction2[pcol.Col, pseal.Seal])
+		ForEach(fn delegate.Action2[pcol.Col, pseal.Seal])
 	}
 
 	MarkPairProp struct {
@@ -126,7 +127,7 @@ func (p *Prop) Get(col pcol.Col) pseal.Seal {
 	return v
 }
 
-func (p *Prop) ForEach(fn typer.DelegateAction2[pcol.Col, pseal.Seal]) {
+func (p *Prop) ForEach(fn delegate.Action2[pcol.Col, pseal.Seal]) {
 	if len(p.keyIndex) != p.Len() {
 		keys := typer.Keys(p.p)
 		sort.Ints(keys)
@@ -200,7 +201,7 @@ func (m MarkPairProp) Child(col pcol.Col) (IProp, error) {
 	return m.prop.Child(col)
 }
 
-func (m MarkPairProp) ForEach(fn typer.DelegateAction2[pcol.Col, pseal.Seal]) {
+func (m MarkPairProp) ForEach(fn delegate.Action2[pcol.Col, pseal.Seal]) {
 	m.prop.ForEach(func(c pcol.Col, s pseal.Seal) {
 		if c <= m.LVal || c >= m.RVal {
 			return

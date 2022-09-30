@@ -1,23 +1,25 @@
 package procast
 
+import "github.com/khicago/got/util/delegate"
+
 type (
-	ErrorHandler func(err error)
+	ErrorHandler delegate.Action1[error]
 )
 
-var EHEmpty ErrorHandler = func(error) {}
+var EHDoNothing ErrorHandler = func(error) {}
 
 func GetRewriteErrHandler(errPtr *error) ErrorHandler {
 	if errPtr == nil {
-		return EHEmpty
+		return EHDoNothing
 	}
 	return func(e error) {
 		*errPtr = e
 	}
 }
 
-func GetWrapVoidErrHandler(fn func()) ErrorHandler {
+func GetWrapVoidErrHandler(fn delegate.Action) ErrorHandler {
 	if fn == nil {
-		return EHEmpty
+		return EHDoNothing
 	}
 	return func(e error) {
 		fn()

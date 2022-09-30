@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/khicago/got/internal/utils"
 	"github.com/khicago/got/table2d/tablety"
+	"github.com/khicago/got/util/delegate"
 	"github.com/khicago/got/util/inlog"
-	"github.com/khicago/got/util/typer"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -52,7 +52,7 @@ func (m MockTableReader) Get(row tablety.Row, col tablety.Col) string {
 	return m.Data[row][col]
 }
 
-func (m MockTableReader) First(pred typer.Predicate[string]) (tablety.Row, tablety.Col) {
+func (m MockTableReader) First(pred delegate.Predicate[string]) (tablety.Row, tablety.Col) {
 	for r := 0; r <= m.MaxRow(); r++ {
 		for c := 0; c <= m.MaxRow(); c++ {
 			if pred(m.Get(r, c)) {

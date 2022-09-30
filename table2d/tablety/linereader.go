@@ -2,7 +2,7 @@ package tablety
 
 import (
 	"errors"
-	"github.com/khicago/got/util/typer"
+	"github.com/khicago/got/util/delegate"
 	"io"
 )
 
@@ -40,7 +40,7 @@ func WarpLineReader[TVal any](val [][]TVal) LineReader[TVal] {
 	}
 }
 
-func AssertRead[TVal any](reader LineReader[TVal], validator typer.Predicate[[]TVal]) ([]TVal, error) {
+func AssertRead[TVal any](reader LineReader[TVal], validator delegate.Predicate[[]TVal]) ([]TVal, error) {
 	ln, err := reader.Read()
 	if err != nil { // error occurred, maybe io.EOF
 		return nil, err

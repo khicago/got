@@ -3,6 +3,7 @@ package pmark
 import (
 	"errors"
 	"fmt"
+	"github.com/khicago/got/util/delegate"
 	"github.com/khicago/got/util/typer"
 )
 
@@ -71,7 +72,7 @@ func (s *Stack[TPayload]) Pop() (mark Mark, payload TPayload, err error) {
 	return mark, payload, nil
 }
 
-func (s *Stack[TPayload]) Consume(mark Mark, payload TPayload, actionPairing typer.DelegateAction2[bool, Pair[TPayload]]) error {
+func (s *Stack[TPayload]) Consume(mark Mark, payload TPayload, actionPairing delegate.Action2[bool, Pair[TPayload]]) error {
 	l := s.Len()
 	if l == 0 {
 		actionPairing.TryCall(false, Pair[TPayload]{L: mark, LVal: payload})

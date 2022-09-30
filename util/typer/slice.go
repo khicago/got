@@ -1,6 +1,7 @@
 package typer
 
 import (
+	"github.com/khicago/got/util/delegate"
 	"golang.org/x/exp/constraints"
 	"sort"
 )
@@ -18,7 +19,7 @@ func SliceContains[TVal comparable](slice []TVal, val TVal) bool {
 	return SliceFirst(slice, val) >= 0
 }
 
-func SliceMap[TFrom, TTo any](from []TFrom, mapFn DelegateMap[TFrom, TTo]) []TTo {
+func SliceMap[TFrom, TTo any](from []TFrom, mapFn delegate.Map[TFrom, TTo]) []TTo {
 	ret := make([]TTo, 0, len(from))
 	for _, valFrom := range from {
 		valTo := mapFn(valFrom)

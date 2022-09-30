@@ -1,7 +1,7 @@
 package tablety
 
 import (
-	"github.com/khicago/got/util/typer"
+	"github.com/khicago/got/util/delegate"
 )
 
 type (
@@ -19,7 +19,7 @@ type (
 
 		// First used to find the first position in witch the val matches the given predicate
 		// row by row, colum by colum
-		First(pred typer.Predicate[TVal]) (Row, Col)
+		First(pred delegate.Predicate[TVal]) (Row, Col)
 
 		LineReader() LineReader[TVal]
 	}

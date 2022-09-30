@@ -2,6 +2,7 @@ package pseal
 
 import (
 	"fmt"
+	"github.com/khicago/got/util/delegate"
 	"github.com/khicago/got/util/strs"
 	"github.com/khicago/got/util/typer"
 )
@@ -113,7 +114,7 @@ var tyDefault = map[Type]any{
 	TyMark:   DefaultMark,
 }
 
-var tyAsserter = map[Type]typer.Predicate[any]{
+var tyAsserter = map[Type]delegate.Predicate[any]{
 	TyNil:    func(any) bool { return false },
 	TyAny:    func(any) bool { return true },
 	TyPID:    typer.AssertType[int64, any],
