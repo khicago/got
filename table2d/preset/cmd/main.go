@@ -31,7 +31,11 @@ func main() {
 			err = file.Close()
 		}
 	}(file)
-	if err = pcol.GenerateCode(p.Headline, "main", "the test lass", file); err != nil {
+
+	if err = file.Truncate(0); err != nil {
+		panic(err)
+	}
+	if err = pcol.GenerateCode(p.Headline, "main", "the test class", file); err != nil {
 		panic(err)
 	}
 

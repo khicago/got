@@ -29,21 +29,22 @@ func New{{$cla.Name}}(ch *pcol.ColHeader) *{{$cla.Name}} {
 func (p *{{$cla.Name}}) PHeader() *pcol.ColHeader {
     return p.ch
 }
-{{range $fname, $finfo := $cla.Methods}}
-// ============= code block of {{$fname}} =============
 
+// ============= Meta block =============
+{{range $fname, $finfo := $cla.Methods}}
 // MetaOf{{$fname}} returns ColMeta of {{$fname}} 
 func (p *{{$cla.Name}}) MetaOf{{$fname}}() *pcol.ColMeta {
     return p.ch.Get({{$finfo.Col}})
 }
-
+{{end}}
+// ============= Reader block =============
+{{range $fname, $finfo := $cla.Methods}}
 // {{$fname}} reads the value of {{$fname}} 
 func (p *{{$cla.Name}}) {{$fname}}(prop preset.IProp) ({{$finfo.TypeName}}, error) {
     seal := prop.Get({{$finfo.Col}})
     return seal.{{$finfo.SealMethod}}()
 }
 {{end}}
-
 
 {{end}}
 `
@@ -104,5 +105,6 @@ func GenerateCode(ch *ColHeader, packName, tableName string, wr io.Writer) error
 		"root_name": strs.Conv2Camel(tableName),
 		"classes":   classes,
 	}
+
 	return t.Execute(wr, b)
 }
