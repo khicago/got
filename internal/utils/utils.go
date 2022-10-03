@@ -1,3 +1,4 @@
+// Package utils can only be used in got package
 package utils
 
 import "encoding/json"

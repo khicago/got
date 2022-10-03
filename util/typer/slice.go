@@ -60,6 +60,12 @@ func SliceSort[TSliceVal constraints.Ordered](slice []TSliceVal) {
 	})
 }
 
+func SliceReverse[TSliceVal any](data []TSliceVal) {
+	for i, j := 0, len(data)-1; i < j; i, j = i+1, j-1 {
+		data[i], data[j] = data[j], data[i]
+	}
+}
+
 // no needs to provide stack fn
 //
 //func SlicePushTail[TSliceVal any](slicePtr *[]TSliceVal, val TSliceVal) {
