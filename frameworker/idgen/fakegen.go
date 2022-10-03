@@ -7,21 +7,21 @@ import (
 )
 
 type (
-	FakeGen struct {
+	fakeGen struct {
 		syncounter.Counter
 		lastTimePrefix int64
 	}
 )
 
-var _ IGenerator = NewFakeGen()
-
-func NewFakeGen() *FakeGen {
-	return &FakeGen{
+// NewFakeGen returns a fake generator
+// rule: 32b timestamp(second) + 10b timestamp(millisecond) + 8b counter + 00 + 000000000000
+func NewFakeGen() IGenerator {
+	return &fakeGen{
 		Counter: syncounter.MakeCounter(1<<CounterDigits - 1),
 	}
 }
 
-func (gen *FakeGen) Get(ctx context.Context) (int64, error) {
+func (gen *fakeGen) Get(ctx context.Context) (int64, error) {
 	prefixTs := getIDPrefix(time.Now(), 0)
 	lastTimePrefix := gen.lastTimePrefix
 	gen.lastTimePrefix = prefixTs
@@ -36,7 +36,7 @@ func (gen *FakeGen) Get(ctx context.Context) (int64, error) {
 	return prefixTs, nil
 }
 
-func (gen *FakeGen) MGet(ctx context.Context, count int64) ([]int64, error) {
+func (gen *fakeGen) MGet(ctx context.Context, count int64) ([]int64, error) {
 	prefixTs := getIDPrefix(time.Now(), 0)
 	lastTimePrefix := gen.lastTimePrefix
 	gen.lastTimePrefix = prefixTs

@@ -1,8 +1,21 @@
 package minion
 
 import (
+	"context"
+	"fmt"
+	"github.com/khicago/got/frameworker/idgen"
+	"github.com/khicago/got/util/basealphabet"
 	"time"
 )
+
+var (
+	idg = idgen.NewIDGen()
+)
+
+func getIDStr(ctx context.Context) string {
+	id, _ := idg.Get(ctx)
+	return fmt.Sprintf("minion-%s", string(basealphabet.Base58BitCoinEncoder(id)))
+}
 
 // holdAndTickUntilClose will execute fn per each tick
 // if the param `tick` set with a value that are less than

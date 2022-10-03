@@ -1,7 +1,7 @@
 package minion
 
 import (
-	"fmt"
+	"context"
 	"math/rand"
 	"sync"
 	"time"
@@ -32,7 +32,9 @@ type (
 	}
 )
 
-var _ Minion = &minion{}
+var (
+	_ Minion = &minion{}
+)
 
 const (
 	InitAtLeastOnce InitStrategy = 0
@@ -59,7 +61,7 @@ func New(name string, fnWorkload delegate.Handler, opts ...Option) Minion {
 	minion.name = name
 	rand.Seed(time.Now().UnixNano())
 
-	minion.id = fmt.Sprintf("minion-%d-%d", rand.Uint64(), time.Now().UnixNano())
+	minion.id = getIDStr(context.Background())
 	minion.watchOnce.Do(delegate.WrapAction(minion.start).Partial(fnWorkload))
 	return minion
 }

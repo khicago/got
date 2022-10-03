@@ -18,10 +18,12 @@ type (
 // NewLocalMUGen
 // fallback: 32b timestamp(second) + 10b timestamp(millisecond) + 8b counter + 00 + 12b scope_id
 // 分为运行在 global server 和运行在业务 server 两种模式, 后者为 fallback
+// todo: 允许 counter 向 timestamp 借位
 func NewLocalMUGen(scopeID int64, fallback bool) *LocalMUGen {
 	return &LocalMUGen{
 		scopeID:    scopeID,
 		globalMode: !fallback,
+		Counter:    syncounter.MakeCounter(1<<CounterDigits - 1),
 	}
 }
 
