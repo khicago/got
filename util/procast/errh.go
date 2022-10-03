@@ -13,7 +13,9 @@ func GetRewriteErrHandler(errPtr *error) ErrorHandler {
 		return EHDoNothing
 	}
 	return func(e error) {
-		*errPtr = e
+		if e != nil {
+			*errPtr = e
+		}
 	}
 }
 
