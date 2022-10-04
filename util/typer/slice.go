@@ -66,6 +66,32 @@ func SliceReverse[TSliceVal any](data []TSliceVal) {
 	}
 }
 
+func SliceMax[TSliceVal constraints.Ordered](data []TSliceVal) (ret TSliceVal) {
+	if len(data) == 0 {
+		return
+	}
+	ret = data[0]
+	for i := 1; i < len(data); i++ {
+		if data[i] > ret {
+			ret = data[i]
+		}
+	}
+	return ret
+}
+
+func SliceMin[TSliceVal constraints.Ordered](data []TSliceVal) (ret TSliceVal) {
+	if len(data) == 0 {
+		return
+	}
+	ret = data[0]
+	for i := 1; i < len(data); i++ {
+		if data[i] < ret {
+			ret = data[i]
+		}
+	}
+	return ret
+}
+
 // no needs to provide stack fn
 //
 //func SlicePushTail[TSliceVal any](slicePtr *[]TSliceVal, val TSliceVal) {

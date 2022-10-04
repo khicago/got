@@ -15,7 +15,3 @@ func EndsWith(str string, suffix string) bool {
 	}
 	return str[n:] == suffix
 }
-
-func Ptr(s string) *string {
-	return &s
-}
