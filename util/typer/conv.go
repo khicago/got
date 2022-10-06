@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"golang.org/x/exp/constraints"
 )
 
 var (
@@ -17,7 +19,6 @@ func Convert[T any](val any, defaultV T) (T, error) {
 	}
 	return vv, nil
 }
-
 func ConvI2I64Any(val any) (int64, error) {
 	switch t := val.(type) {
 	case int:
@@ -45,3 +46,9 @@ func ConvI2I64Any(val any) (int64, error) {
 	}
 	return strconv.ParseInt(fmt.Sprintf("%v", val), 10, 16)
 }
+
+
+func I2Str[T constraints.Integer](num T) string {
+	return strconv.FormatInt(int64(num), 10)
+}
+

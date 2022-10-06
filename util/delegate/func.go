@@ -14,6 +14,15 @@ func (t Func1[TIn, TOut]) Partial(val TIn) Func[TOut] {
 	}
 }
 
+// TryCall
+// do nothing when fulc is nil
+func (t Func1[TIn, TOut]) TryCall(val TIn, defaultVal TOut) TOut {
+	if t == nil {
+		return defaultVal
+	}
+	return t(val)
+}
+
 // Partial
 // partial func2 to func1
 func (t Func2[TIn1, TIn2, TOut]) Partial(val TIn1) Func1[TIn2, TOut] {

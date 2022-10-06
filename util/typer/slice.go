@@ -1,9 +1,12 @@
 package typer
 
 import (
+	"sort"
+
 	"github.com/khicago/got/util/delegate"
 	"golang.org/x/exp/constraints"
-	"sort"
+
+	"github.com/bytedance/gopkg/lang/fastrand"
 )
 
 func SliceFirst[TVal comparable](slice []TVal, val TVal) int {
@@ -13,6 +16,35 @@ func SliceFirst[TVal comparable](slice []TVal, val TVal) int {
 		}
 	}
 	return -1
+}
+
+func SliceFirstMatch[TVal comparable](slice []TVal, pred delegate.Predicate[TVal]) int {
+	for i, v := range slice {
+		if pred(v) {
+			return i
+		}
+	}
+	return -1
+}
+
+func SliceFilter[TVal comparable](slice []TVal, pred delegate.Predicate[TVal]) []TVal {
+	ret := make([]TVal, 0, len(slice)/2)
+	for i := range slice {
+		v := slice[i]
+		if pred(v) {
+			ret = append(ret, v)
+		}
+	}
+	return ret
+}
+
+func SliceRand[TVal comparable](slice []TVal, defaultVal TVal) TVal {
+	n := len(slice)
+	if n == 0 {
+		return defaultVal
+	}
+	i := fastrand.Intn(n)
+	return slice[i]
 }
 
 func SliceContains[TVal comparable](slice []TVal, val TVal) bool {

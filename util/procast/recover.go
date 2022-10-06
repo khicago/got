@@ -35,9 +35,9 @@ func innerRecover(handler ErrorHandler) {
 }
 
 // SafeGo run function in a protected goroutine
-func SafeGo(fn func(), errHandler ErrorHandler) {
+func SafeGo(fn func(), panicErrHandler ErrorHandler) {
 	go func() {
-		defer innerRecover(errHandler)
+		defer innerRecover(panicErrHandler)
 		fn()
 	}()
 }

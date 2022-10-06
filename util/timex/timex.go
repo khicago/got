@@ -6,10 +6,18 @@ import (
 	"time"
 )
 
+type (
+	Time = time.Time
+)
+
 // GetMSStamp
 // returns the millisecond timestamp
 func GetMSStamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+func GetFloat64Time(t time.Time) float64 {
+	return float64(t.Nanosecond())/float64(time.Second) + float64(t.Unix())
 }
 
 func AfterMax(duration ...time.Duration) <-chan time.Time {
