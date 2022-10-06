@@ -1,14 +1,13 @@
 package idgen
 
-import "time"
+import (
+	"github.com/khicago/got/util/timex"
+)
 
-func getIDPrefix(t time.Time, digitsClearExtra int) int64 {
-	prefix := int64(
-		(float64(t.Unix())+float64(t.Nanosecond())/float64(time.Second))*
-			float64(1<<32-ControlIDDigits), // 18
-	) << ControlIDDigits // 14
+func getIDPrefix(t timex.Time, digitsClearExtra int) int64 {
+	prefix := int64(timex.GetFloat64Time(t)*(1<<(32-ControlIDDigits))) << ControlIDDigits // total move 32 bits
 	if digitsClearExtra > 0 {
-		prefix &= ^((1<<digitsClearExtra - 1) << ControlIDDigits)
+		prefix &= ^((1<<digitsClearExtra - 1) << ControlIDDigits) // erase more bits to free up space for custom segments
 	}
 	return prefix
 }
