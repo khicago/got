@@ -1,0 +1,6 @@
+BenchmarkMuRingPushAndPop-12             9435062               129 ns/op
+BenchmarkMuRingPush-12                  17764705                72.2 ns/op
+BenchmarkRing64PushAndPop-12            15707803                76.5 ns/op
+BenchmarkRing64Push-12                  26133206                48.8 ns/op
+BenchmarkRingPushAndPop-12              12632216                94.6 ns/op
+BenchmarkRingPush-12                    20459198                58.0 ns/op
