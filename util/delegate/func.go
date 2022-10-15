@@ -8,6 +8,12 @@ type (
 
 // Partial
 // partial func1 to func
+func ToFunc1[TIn any, TOut any](f Func1[TIn, TOut]) Func1[TIn, TOut] {
+	return f
+}
+
+// Partial
+// partial func1 to func
 func (t Func1[TIn, TOut]) Partial(val TIn) Func[TOut] {
 	return func() TOut {
 		return t(val)

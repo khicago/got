@@ -9,6 +9,12 @@ import (
 	"github.com/bytedance/gopkg/lang/fastrand"
 )
 
+func SliceForeach[TSliceVal any](slice []TSliceVal, foreachFn delegate.Action1[TSliceVal]) {
+	for _, val := range slice {
+		foreachFn.TryCall(val)
+	}
+}
+
 func SliceFirst[TVal comparable](slice []TVal, val TVal) int {
 	for i, v := range slice {
 		if v == val {

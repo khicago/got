@@ -8,6 +8,15 @@ type (
 	Action4[T1, T2, T3, T4 any] func(T1, T2, T3, T4)
 )
 
+// TryCall
+// do nothing when action is nil
+func (t Action) TryCall() {
+	if t == nil {
+		return
+	}
+	t()
+}
+
 // Partial
 // partial func1 to func
 func (t Action1[T]) Partial(val T) Action {

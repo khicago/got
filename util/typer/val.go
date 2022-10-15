@@ -1,11 +1,11 @@
 package typer
 
+import (
+	"golang.org/x/exp/constraints"
+)
+
 func ZeroVal[T any]() (v T) {
 	return
-}
-
-func IsZero[T comparable](v T) bool {
-	return ZeroVal[T]() == v
 }
 
 func Ptr[T any](v T) *T {
@@ -24,4 +24,8 @@ func Or[T comparable](a, b T) T {
 		return b
 	}
 	return a
+}
+
+func Between[T constraints.Ordered](v T, begin, end T) bool {
+	return v >= begin && v <= end
 }
