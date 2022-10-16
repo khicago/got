@@ -1,37 +1,26 @@
 package typer
 
-import (
-	"reflect"
-	"unsafe"
-)
+import "github.com/khicago/got/util/delegate"
 
-func AssertType[TAssert, TVal any](v TVal) bool {
-	_, ok := any(v).(TAssert)
-	return ok
-}
-
-func AssertNil(v any) bool {
-	if (*struct {
-		p    uintptr
-		data unsafe.Pointer
-	})(unsafe.Pointer(&v)).data == nil {
-		return true
+func assertAndRun(b bool, terminator []delegate.Action) bool {
+	if !b {
+		SliceForeach(terminator, delegate.Action.TryCall)
 	}
-
-	valueOf := reflect.ValueOf(v)
-	k := valueOf.Kind()
-	switch k {
-	case reflect.Chan, reflect.Func, reflect.Map, reflect.Ptr, reflect.UnsafePointer, reflect.Interface, reflect.Slice:
-		return valueOf.IsNil()
-	default:
-		return v == nil
-	}
+	return b
 }
 
-func AssertNotNil(v any) bool {
-	return !AssertNil(v)
+func AssertType[TAssert, TVal any](v TVal, terminator ...delegate.Action) bool {
+	return assertAndRun(IsType[TAssert](v), terminator)
 }
 
-func AssertZeroVal[T comparable](v T) bool {
-	return v == ZeroVal[T]()
+func AssertZeroVal[T comparable](v T, terminator ...delegate.Action) bool {
+	return assertAndRun(IsZero(v), terminator)
+}
+
+func AssertNil[T comparable](v T, terminator ...delegate.Action) bool {
+	return assertAndRun(IsNil(v), terminator)
+}
+
+func AssertNotNil[T comparable](v T, terminator ...delegate.Action) bool {
+	return assertAndRun(InNotNil(v), terminator)
 }

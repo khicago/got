@@ -106,7 +106,7 @@ GetColPID:
 
 	inlog.Debugf("[READER] start parse data, got header %s", utils.MarshalIndentPrintAll(preset.Headline))
 	for line, err = read(); err == nil; line, err = read() {
-		inlog.Debugf("read data line, %v, %v \n", line, typer.AssertNotNil(line))
+		inlog.Debugf("read data line, %v, %v \n", line, typer.InNotNil(line))
 		prop := NewProp()
 		prop.childrenCols = childrenCols
 		preset.Headline.ForeachCol(func(colMeta *pcol.ColMeta) {

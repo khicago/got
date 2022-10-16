@@ -49,7 +49,7 @@ func (*forEachFieldConfig) Override(fn func(cfg *forEachFieldConfig)) forEachFie
 }
 
 func ForEachField(target any, fn FieldHandler, options ...forEachFieldOption) (err error) {
-	defer procast.GetRewriteErrHandler(&err).Recover()
+	defer procast.Recover(procast.GetRewriteErrHandler(&err))
 
 	conf := (&forEachFieldConfig{}).pipe(options)
 
