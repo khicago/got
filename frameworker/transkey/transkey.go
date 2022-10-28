@@ -2,6 +2,8 @@ package transkey
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/khicago/got/util/delegate"
 )
 
@@ -84,14 +86,35 @@ func (kl KeyList) ExtractFromCtx(ctx context.Context, u Usage, setter func(keyFo
 func (kl KeyList) ExtractCtxToMap(ctx context.Context, u Usage, marshal delegate.Map[any, string]) map[string]string {
 	ret := make(map[string]string)
 	kl.ExtractFromCtx(ctx, u, func(keyForUsage string, value any) {
-		ret[keyForUsage] = marshal(value)
+		if str := marshal(value); str != "" {
+			ret[keyForUsage] = str
+		}
 	})
 	return ret
 }
 
-func (kl KeyList) InjectMapToCtx(ctx context.Context, u Usage, m map[string]string, unmarshal func(key string, v string) any) context.Context {
+func (kl KeyList) ExtractCtxMapStrings(ctx context.Context, u Usage) map[string]string {
+	return kl.ExtractCtxToMap(ctx, u, func(val any) string {
+		if val == nil {
+			return ""
+		} else if str, ok := val.(string); ok {
+			return str
+		} else if stringer, ok := val.(fmt.Stringer); ok {
+			return stringer.String()
+		}
+		return fmt.Sprintf("%v", val)
+	})
+}
+
+// InjectMapToCtx
+// Keys that do not exist in the incoming map are not written
+func (kl KeyList) InjectMapToCtx(ctx context.Context, u Usage, m map[string]string, unmarshal func(keyInMap string, v string) any) context.Context {
 	ctx = kl.InjectToCtx(ctx, u, func(keyForUsage string) any {
-		return unmarshal(keyForUsage, m[keyForUsage])
+		v, ok := m[keyForUsage]
+		if ok {
+			return unmarshal(keyForUsage, v)
+		}
+		return nil
 	})
 	return ctx
 }
