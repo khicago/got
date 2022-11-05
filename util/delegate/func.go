@@ -6,7 +6,7 @@ type (
 	Func2[TIn1, TIn2 any, TOut any] func(TIn1, TIn2) TOut
 )
 
-// Partial
+// ToFunc1
 // partial func1 to func
 func ToFunc1[TIn any, TOut any](f Func1[TIn, TOut]) Func1[TIn, TOut] {
 	return f
@@ -27,6 +27,10 @@ func (t Func1[TIn, TOut]) TryCall(val TIn, defaultVal TOut) TOut {
 		return defaultVal
 	}
 	return t(val)
+}
+
+func (t Func1[TIn, TOut]) ToConvert() Convert[TIn, TOut] {
+	return Convert[TIn, TOut](t)
 }
 
 // Partial

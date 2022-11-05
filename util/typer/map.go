@@ -13,12 +13,25 @@ func Keys[TKey comparable, TVal any](m map[TKey]TVal) []TKey {
 	return keys
 }
 
-func MapForEachOrderly[TKey constraints.Ordered, TVal any](m map[TKey]TVal, traver func(key TKey, val TVal)) {
+func KeysSorted[TKey constraints.Ordered, TVal any](m map[TKey]TVal) []TKey {
 	keys := Keys(m)
 	SliceSort(keys)
+	return keys
+}
+
+func MapForEachOrderly[TKey constraints.Ordered, TVal any](m map[TKey]TVal, traver func(key TKey, val TVal)) {
+	keys := KeysSorted(m)
 	for _, key := range keys {
 		traver(key, m[key])
 	}
+}
+
+func MapMap[TKey comparable, TVal any, TKey1 comparable, TVal1 any](m map[TKey]TVal, keyConv delegate.Convert[TKey, TKey1], valConv delegate.Convert[TVal, TVal1]) map[TKey1]TVal1 {
+	ret := make(map[TKey1]TVal1)
+	for key := range m {
+		ret[keyConv(key)] = valConv(m[key])
+	}
+	return ret
 }
 
 func MapDump[TKey comparable, TVal any](m map[TKey]TVal, dumper delegate.Func2[TKey, TVal, string]) []string {

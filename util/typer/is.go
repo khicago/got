@@ -28,7 +28,7 @@ func IsNil(v any) bool {
 	}
 }
 
-func InNotNil(v any) bool {
+func IsNotNil(v any) bool {
 	return !IsNil(v)
 }
 

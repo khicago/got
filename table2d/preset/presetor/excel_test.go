@@ -1,10 +1,11 @@
 package presetor
 
 import (
+	"testing"
+
 	"github.com/khicago/got/internal/utils"
 	"github.com/khicago/got/util/inlog"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestExcel(t *testing.T) {

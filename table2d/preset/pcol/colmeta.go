@@ -3,10 +3,11 @@ package pcol
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/khicago/got/table2d/preset/pseal"
-	"github.com/khicago/got/util/strs"
 	"strconv"
 	"strings"
+
+	"github.com/khicago/got/table2d/preset/pseal"
+	"github.com/khicago/got/util/strs"
 )
 
 type (
@@ -15,7 +16,6 @@ type (
 	// ColMeta defines how this column is resolved, only the first Mark
 	// of the substructure is recorded in the upper ColMeta list
 	ColMeta struct {
-
 		// Col is the column number of the meta, this information is also
 		// available in the upper level table, the redundancy is provided
 		// here mainly to pass the full information separately and later.

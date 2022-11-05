@@ -11,12 +11,10 @@ type (
 	}
 )
 
-var (
-	Nil = Seal{
-		ty:  TyNil,
-		val: DefaultAny,
-	}
-)
+var Nil = Seal{
+	ty:  TyNil,
+	val: DefaultAny,
+}
 
 func NewSeal(ty Type, val any) Seal {
 	return Seal{

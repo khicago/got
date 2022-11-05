@@ -1,8 +1,9 @@
 package pseal
 
 import (
-	"github.com/khicago/got/util/inlog"
 	"strconv"
+
+	"github.com/khicago/got/util/inlog"
 
 	"github.com/khicago/got/util/strs"
 )

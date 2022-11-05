@@ -17,10 +17,10 @@ func AssertZeroVal[T comparable](v T, terminator ...delegate.Action) bool {
 	return assertAndRun(IsZero(v), terminator)
 }
 
-func AssertNil[T comparable](v T, terminator ...delegate.Action) bool {
+func AssertNil[T any](v T, terminator ...delegate.Action) bool {
 	return assertAndRun(IsNil(v), terminator)
 }
 
-func AssertNotNil[T comparable](v T, terminator ...delegate.Action) bool {
-	return assertAndRun(InNotNil(v), terminator)
+func AssertNotNil[T any](v T, terminator ...delegate.Action) bool {
+	return assertAndRun(IsNotNil(v), terminator)
 }

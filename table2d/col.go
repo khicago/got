@@ -2,14 +2,15 @@ package table2d
 
 import (
 	"fmt"
-	"github.com/khicago/got/annoparse"
-	"github.com/khicago/got/table2d/tablety"
-	"github.com/khicago/got/util/reflecto"
-	"github.com/khicago/got/util/strs"
 	"io"
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/khicago/got/annoparse"
+	"github.com/khicago/got/table2d/tablety"
+	"github.com/khicago/got/util/reflecto"
+	"github.com/khicago/got/util/strs"
 )
 
 type (

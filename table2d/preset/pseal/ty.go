@@ -2,6 +2,7 @@ package pseal
 
 import (
 	"fmt"
+
 	"github.com/khicago/got/util/delegate"
 	"github.com/khicago/got/util/strs"
 	"github.com/khicago/got/util/typer"
@@ -70,9 +71,7 @@ const (
 	DefaultMark   = ""
 )
 
-var (
-	DefaultAny = typer.ZeroVal[any]()
-)
+var DefaultAny = typer.ZeroVal[any]()
 
 var tyNames = map[Type]string{
 	TyNil:    "nil",

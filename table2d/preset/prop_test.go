@@ -1,10 +1,11 @@
 package preset
 
 import (
+	"testing"
+
 	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/khicago/got/util/inlog"
-	"testing"
 
 	"github.com/khicago/got/table2d/preset/pseal"
 

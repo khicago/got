@@ -2,6 +2,7 @@ package presetor
 
 import (
 	"context"
+
 	"github.com/khicago/got/table2d/preset"
 	"github.com/khicago/got/table2d/tablety"
 )

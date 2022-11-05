@@ -2,13 +2,13 @@ package tablety
 
 import (
 	"errors"
-	"github.com/khicago/got/util/delegate"
 	"io"
+
+	"github.com/khicago/got/util/delegate"
 )
 
 type (
 	LineReader[TVal any] interface {
-
 		// Read
 		// returns io.EOF when finished
 		// returns []TVal when empty
@@ -21,9 +21,7 @@ type (
 	}
 )
 
-var (
-	ErrValidateFailed = errors.New("validate failed")
-)
+var ErrValidateFailed = errors.New("validate failed")
 
 func (cl *commonLineReader[TVal]) Read() ([]TVal, error) {
 	if cl.index >= len(cl.val) {

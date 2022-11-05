@@ -3,10 +3,11 @@ package presetor
 import (
 	"context"
 	"encoding/csv"
-	"github.com/khicago/got/table2d/preset"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/khicago/got/table2d/preset"
 )
 
 func CSV(r io.Reader) (*preset.Preset, error) {

@@ -15,6 +15,12 @@ func SliceForeach[TSliceVal any](slice []TSliceVal, foreachFn delegate.Action1[T
 	}
 }
 
+func SliceForeachI[TSliceVal any](slice []TSliceVal, foreachFn delegate.Action2[TSliceVal, int]) {
+	for i, val := range slice {
+		foreachFn.TryCall(val, i)
+	}
+}
+
 func SliceFirst[TVal comparable](slice []TVal, val TVal) int {
 	for i, v := range slice {
 		if v == val {
@@ -57,7 +63,7 @@ func SliceContains[TVal comparable](slice []TVal, val TVal) bool {
 	return SliceFirst(slice, val) >= 0
 }
 
-func SliceMap[TFrom, TTo any](from []TFrom, mapFn delegate.Map[TFrom, TTo]) []TTo {
+func SliceMap[TFrom, TTo any](from []TFrom, mapFn delegate.Convert[TFrom, TTo]) []TTo {
 	ret := make([]TTo, 0, len(from))
 	for _, valFrom := range from {
 		valTo := mapFn(valFrom)

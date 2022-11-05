@@ -8,9 +8,7 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
-var (
-	ErrPropertyType = errors.New("got/typer: convert type failed")
-)
+var ErrPropertyType = errors.New("got/typer: convert type failed")
 
 func Convert[T any](val any, defaultV T) (T, error) {
 	vv, ok := val.(T)
@@ -19,6 +17,16 @@ func Convert[T any](val any, defaultV T) (T, error) {
 	}
 	return vv, nil
 }
+
+func ConvertMust[T any](val any) T {
+	zero := ZeroVal[T]()
+	v, err := Convert[T](val, zero)
+	if err != nil {
+		panic(fmt.Errorf("conver to type %T failed, %w", zero, err))
+	}
+	return v
+}
+
 func ConvI2I64Any(val any) (int64, error) {
 	switch t := val.(type) {
 	case int:
@@ -47,8 +55,18 @@ func ConvI2I64Any(val any) (int64, error) {
 	return strconv.ParseInt(fmt.Sprintf("%v", val), 10, 16)
 }
 
-
 func I2Str[T constraints.Integer](num T) string {
 	return strconv.FormatInt(int64(num), 10)
 }
 
+func Any[T any](v T) any {
+	return v
+}
+
+func S2IMust[T constraints.Integer](str string) T {
+	i, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		panic(fmt.Errorf("s2i(%s) %T failed, %w", str, ZeroVal[T](), err))
+	}
+	return T(i)
+}

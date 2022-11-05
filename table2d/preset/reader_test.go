@@ -2,12 +2,13 @@ package preset
 
 import (
 	"context"
+	"testing"
+
 	"github.com/khicago/got/internal/utils"
 	"github.com/khicago/got/table2d/tablety"
 	"github.com/khicago/got/util/delegate"
 	"github.com/khicago/got/util/inlog"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type (

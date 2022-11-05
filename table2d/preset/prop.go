@@ -4,18 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/khicago/got/table2d/preset/pseal"
 	"github.com/khicago/got/util/delegate"
 	"github.com/khicago/got/util/typer"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 type (
-	PropTable map[int64]*Prop // PID => Prop
+	PresetID = int64
+
+	PropTable map[PresetID]*Prop // PID => Prop
 
 	PropData       map[pcol.Col]pseal.Seal
 	PropChildIndex map[pcol.Col]pmark.Pair[pcol.Col]
@@ -59,9 +62,7 @@ var (
 	_ IProp = &MarkPairProp{}
 )
 
-var (
-	ErrSealFormatError = errors.New("seal marshal format error")
-)
+var ErrSealFormatError = errors.New("seal marshal format error")
 
 func NewProp() *Prop {
 	return &Prop{

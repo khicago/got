@@ -2,6 +2,7 @@ package pcol
 
 import (
 	"errors"
+
 	"github.com/khicago/got/internal/utils"
 	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/khicago/got/table2d/preset/pseal"
@@ -11,14 +12,12 @@ import (
 )
 
 func (header *ColHeader) ParseHeader(colFrom, colTo int, metaSymbols, names, constraints []string) (*pmark.Stack[Col], error) {
-
 	inlog.Debugf("lineOfMeta(%d):\t\t %s\n", len(metaSymbols), utils.MarshalPrintAll(metaSymbols))
 	inlog.Debugf("lineColName(%d):\t %s\n", len(names), utils.MarshalPrintAll(names))
 	inlog.Debugf("lineConstraint(%d):\t %s\n", len(constraints), utils.MarshalPrintAll(constraints))
 
 	headerStack := []*ColHeader{header}
 	colPush := func(pairing bool, event pmark.Pair[Col]) {
-
 		if !pairing {
 			child := NewColHeader()
 			typer.SliceLast(headerStack).Children[event.LVal] = ColHeaderChild{

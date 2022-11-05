@@ -3,6 +3,7 @@ package pmark
 import (
 	"errors"
 	"fmt"
+
 	"github.com/khicago/got/util/delegate"
 	"github.com/khicago/got/util/typer"
 )

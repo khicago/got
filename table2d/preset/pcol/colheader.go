@@ -2,13 +2,14 @@ package pcol
 
 import (
 	"encoding/json"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/khicago/got/util/inlog"
 	"github.com/khicago/got/util/strs"
 	"github.com/khicago/got/util/typer"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 type (
@@ -20,10 +21,9 @@ type (
 	ColHeaderChildren map[Col]ColHeaderChild
 
 	// The ColHeader is a nested structure of ColMeta information tables
-	//and is also optimised for queries by means of cached indexes etc. A
-	//Preset has one and only one root ColHeader
+	// and is also optimised for queries by means of cached indexes etc. A
+	// Preset has one and only one root ColHeader
 	ColHeader struct {
-
 		// Def handled ColMeta's information contained directly in
 		// this ColHeader
 		Def map[Col]*ColMeta `json:"def"`

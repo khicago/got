@@ -2,10 +2,12 @@ package preset
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pseal"
+	"github.com/khicago/got/util/delegate"
 	"github.com/khicago/got/util/inlog"
-	"strings"
 )
 
 type (
@@ -27,7 +29,7 @@ func NewPreset() *Preset {
 	}
 }
 
-func (p *Preset) QueryByCol(pid int64, col pcol.Col) pseal.Seal {
+func (p *Preset) QueryByCol(pid PresetID, col pcol.Col) pseal.Seal {
 	seal, ok := (*p.PropTable)[pid]
 	if !ok {
 		return pseal.Nil
@@ -35,7 +37,7 @@ func (p *Preset) QueryByCol(pid int64, col pcol.Col) pseal.Seal {
 	return seal.Get(col)
 }
 
-func (p *Preset) Query(pid int64, pth ...string) pseal.Seal {
+func (p *Preset) Query(pid PresetID, pth ...string) pseal.Seal {
 	cm := p.Headline.GetByPth(pth...)
 	if cm == nil {
 		inlog.Debugf("got wrong path when parse %d, pth = %v", pid, pth)
@@ -44,6 +46,15 @@ func (p *Preset) Query(pid int64, pth ...string) pseal.Seal {
 	return p.QueryByCol(pid, cm.Col)
 }
 
-func (p *Preset) QueryS(pid int64, pthStr string) pseal.Seal {
+func (p *Preset) QueryS(pid PresetID, pthStr string) pseal.Seal {
 	return p.Query(pid, strings.Split(pthStr, "/")...)
+}
+
+func (p *Preset) ForEachOfCol(col pcol.Col, foreach delegate.Handler2[PresetID, pseal.Seal]) error {
+	for pid, row := range *p.PropTable {
+		if err := foreach(pid, row.Get(col)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

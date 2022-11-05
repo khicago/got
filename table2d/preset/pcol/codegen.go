@@ -88,14 +88,12 @@ func NewClass(className string, header *ColHeader) *ClassInfo {
 			SealMethod: meta.Type.SealCallName(),
 			Meta:       meta,
 		}
-
 	})
 
 	return cla
 }
 
 func GenerateCode(ch *ColHeader, packName, tableName string, wr io.Writer) error {
-
 	t := template.New("Template")
 	t, _ = t.Parse(tpl)
 
