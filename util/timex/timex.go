@@ -1,9 +1,10 @@
 package timex
 
 import (
+	"time"
+
 	"github.com/khicago/got/util/typer"
 	"golang.org/x/exp/constraints"
-	"time"
 )
 
 type (

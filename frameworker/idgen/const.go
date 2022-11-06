@@ -28,6 +28,4 @@ const (
 	ControlDigitsPos = 1 << 13
 )
 
-var (
-	ErrGenerateIDFailed = errors.New("generate id failed")
-)
+var ErrGenerateIDFailed = errors.New("generate id failed")

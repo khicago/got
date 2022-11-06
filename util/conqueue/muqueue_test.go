@@ -1,9 +1,10 @@
 package conqueue
 
 import (
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMuRingPushAndPop(t *testing.T) {
@@ -125,7 +126,6 @@ func BenchmarkMuRingPushAndPop(b *testing.B) {
 	})
 	assert.Equal(b, 0, queue.(*MuRing).Len())
 }
-
 
 func BenchmarkMuRingPush(b *testing.B) {
 	size := uint32(b.N)

@@ -9,9 +9,9 @@ import (
 
 type Ring struct {
 	cur   uint32
-	_ [60]byte
+	_     [60]byte
 	head  uint32
-	_ [60]byte
+	_     [60]byte
 	cap   uint32
 	dLen  uint32
 	bound uint32

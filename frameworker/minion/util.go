@@ -3,14 +3,13 @@ package minion
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/khicago/got/frameworker/idgen"
 	"github.com/khicago/got/util/basealphabet"
-	"time"
 )
 
-var (
-	idg = idgen.NewIDGen()
-)
+var idg = idgen.NewIDGen()
 
 func getIDStr(ctx context.Context) string {
 	id, _ := idg.Get(ctx)

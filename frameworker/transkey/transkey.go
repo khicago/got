@@ -83,7 +83,7 @@ func (kl KeyList) ExtractFromCtx(ctx context.Context, u Usage, setter func(keyFo
 	return ctx
 }
 
-func (kl KeyList) ExtractCtxToMap(ctx context.Context, u Usage, marshal delegate.Map[any, string]) map[string]string {
+func (kl KeyList) ExtractCtxToMap(ctx context.Context, u Usage, marshal delegate.Convert[any, string]) map[string]string {
 	ret := make(map[string]string)
 	kl.ExtractFromCtx(ctx, u, func(keyForUsage string, value any) {
 		if str := marshal(value); str != "" {

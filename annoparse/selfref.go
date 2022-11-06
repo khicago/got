@@ -29,6 +29,6 @@ func getAnnoKeyMapping[TAnno IAnnotationObject](annoObj TAnno) (map[FieldPath]st
 		ret[fieldPath[1:]] = tagSetting.Name
 	}
 	annoKeyMapping[annoObj.TagName()] = ret
-	//fmt.Println("====>", ret)
+	// fmt.Println("====>", ret)
 	return ret, nil
 }

@@ -2,6 +2,7 @@ package basealphabet
 
 import (
 	"bytes"
+
 	"github.com/khicago/got/util/typer"
 )
 
@@ -14,7 +15,7 @@ func EncodeInt64(alphabet []byte, num int64) string {
 	}
 	typer.SliceReverse(result)
 	ret := string(result)
-	//inlog.Debugf("ret= %s\n", ret)
+	// inlog.Debugf("ret= %s\n", ret)
 	if ret == "" {
 		return string(alphabet[:1])
 	}

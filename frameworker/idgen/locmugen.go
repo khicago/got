@@ -2,8 +2,9 @@ package idgen
 
 import (
 	"context"
-	"github.com/khicago/got/util/syncounter"
 	"time"
+
+	"github.com/khicago/got/util/syncounter"
 )
 
 type (

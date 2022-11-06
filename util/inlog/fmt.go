@@ -1,7 +1,6 @@
 package inlog
 
-type FmtPrinter struct {
-}
+type FmtPrinter struct{}
 
 func (f FmtPrinter) Debugf(format string, args ...any) { innerPrint("[DEBUG]", format, args...) }
 

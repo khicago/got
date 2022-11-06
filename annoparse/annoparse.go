@@ -55,6 +55,7 @@ func ExtractAnnoValuesFromTag[TAnno IAnnotationObject](annoObj TAnno, tag string
 	}
 	_, err = kvstr.KVStr(tag).ReflectTo(annoObj, &kvstr.QueryOption{
 		TryMapping: keyMapping,
-		TrySnake:   true})
+		TrySnake:   true,
+	})
 	return err
 }

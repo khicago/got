@@ -1,6 +1,5 @@
 package procast
 
-
 import (
 	"sync"
 )
@@ -36,4 +35,3 @@ func MultiGo(handlers ...func() error) error {
 
 	return nil
 }
-

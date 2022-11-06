@@ -2,6 +2,7 @@ package inlog
 
 import (
 	"fmt"
+
 	"github.com/khicago/got/util/typer"
 )
 

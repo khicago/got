@@ -1,9 +1,10 @@
 package conqueue
 
 import (
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRingPushAndPop(t *testing.T) {

@@ -32,9 +32,7 @@ type (
 	}
 )
 
-var (
-	_ Minion = &minion{}
-)
+var _ Minion = &minion{}
 
 const (
 	InitAtLeastOnce InitStrategy = 0

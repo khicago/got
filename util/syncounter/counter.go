@@ -2,8 +2,9 @@ package syncounter
 
 import (
 	"errors"
-	"github.com/khicago/got/util/delegate"
 	"sync"
+
+	"github.com/khicago/got/util/delegate"
 )
 
 type Counter struct {
@@ -12,9 +13,7 @@ type Counter struct {
 	max     int64
 }
 
-var (
-	ErrCounterHasBeenExhausted = errors.New("counter has been exhausted")
-)
+var ErrCounterHasBeenExhausted = errors.New("counter has been exhausted")
 
 // MakeCounter create a counter
 //
