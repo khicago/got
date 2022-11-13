@@ -116,14 +116,14 @@ var tyDefault = map[Type]any{
 var tyAsserter = map[Type]delegate.Predicate[any]{
 	TyNil:    func(any) bool { return false },
 	TyAny:    func(any) bool { return true },
-	TyPID:    typer.AssertType[int64, any],
-	TyID:     typer.AssertType[int64, any],
-	TyBool:   typer.AssertType[bool, any],
-	TyInt:    typer.AssertType[int, any],
-	TyFloat:  typer.AssertType[float64, any],
-	TyString: typer.AssertType[string, any],
-	TyMemo:   typer.AssertType[string, any],
-	TyMark:   typer.AssertType[string, any],
+	TyPID:    typer.IsType[int64, any],
+	TyID:     typer.IsType[int64, any],
+	TyBool:   typer.IsType[bool, any],
+	TyInt:    typer.IsType[int, any],
+	TyFloat:  typer.IsType[float64, any],
+	TyString: typer.IsType[string, any],
+	TyMemo:   typer.IsType[string, any],
+	TyMark:   typer.IsType[string, any],
 }
 
 func SymToType(sym string) Type {
