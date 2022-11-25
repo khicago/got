@@ -5,18 +5,24 @@ import (
 	"fmt"
 
 	"github.com/khicago/got/util/delegate"
-	"github.com/khicago/got/util/typer"
 )
 
 type (
-	Pair[TPayload any] struct {
-		L, R       Mark
-		LVal, RVal TPayload
+	// Cell - a cell with mark and payload
+	Cell[TPayload any] struct {
+		Mark `json:"mark"`
+		Val  TPayload `json:"val"`
 	}
 
+	// Pair - a pair of cells, generally used for pairing results
+	Pair[TPayload any] struct {
+		L Cell[TPayload] `json:"l"`
+		R Cell[TPayload] `json:"r"`
+	}
+
+	// Stack - a stack of cells, supporting mark pairings
 	Stack[TPayload any] struct {
-		s       []Mark
-		p       []TPayload
+		stack   []Cell[TPayload]
 		Results []Pair[TPayload]
 	}
 )
@@ -26,80 +32,99 @@ var (
 	ErrMarkAreNotRegistered = errors.New("mark are not registered")
 )
 
+// NewStack - create a new stack
 func NewStack[TPayload any](cap int) *Stack[TPayload] {
 	ret := Stack[TPayload]{}
+
 	if cap > 0 {
-		ret.s = make([]Mark, 0, cap)
-		ret.p = make([]TPayload, 0, cap)
+		ret.stack = make([]Cell[TPayload], 0, cap)
 		ret.Results = make([]Pair[TPayload], 0, (cap+1)>>1)
 	} else {
-		ret.s = make([]Mark, 0)
-		ret.p = make([]TPayload, 0)
-		ret.Results = make([]Pair[TPayload], 0)
+		ret.stack = make([]Cell[TPayload], 0)
+		ret.Results = make([]Pair[TPayload], 01)
 	}
 	return &ret
 }
 
+// Len returns the length of the stack
 func (s *Stack[TPayload]) Len() int {
-	return len(s.s)
+	return len(s.stack)
 }
 
 // Push
 // only registered mark can be pushed into the stack
-func (s *Stack[TPayload]) Push(mark Mark, payload TPayload) error {
+func (s *Stack[TPayload]) Push(mark Mark, val TPayload) error {
 	if !mark.Registered() {
-		return fmt.Errorf("%s %w", mark, ErrMarkAreNotRegistered)
+		return fmt.Errorf("%w, mark = %s", ErrMarkAreNotRegistered, mark)
 	}
-	s.s = append(s.s, mark)
-	s.p = append(s.p, payload)
+	s.stack = append(s.stack, Cell[TPayload]{Mark: mark, Val: val})
 	return nil
 }
 
-func (s *Stack[TPayload]) Peak() (mark Mark, err error) {
-	l := s.Len()
-	if l == 0 {
-		return NIL, ErrInsufficientStackLen
-	}
-	return (s.s)[l-1], nil
+// PeekMark returns the mark of top cell of the stack
+func (s *Stack[TPayload]) PeekMark() (mark Mark, err error) {
+	p, e := s.Peek()
+	return p.Mark, e
 }
 
-func (s *Stack[TPayload]) Pop() (mark Mark, payload TPayload, err error) {
+// Peek returns the top cell of the stack
+func (s *Stack[TPayload]) Peek() (cell Cell[TPayload], err error) {
 	l := s.Len()
 	if l == 0 {
-		return NIL, typer.ZeroVal[TPayload](), ErrInsufficientStackLen
+		return Cell[TPayload]{Mark: NIL}, ErrInsufficientStackLen
 	}
-	mark, s.s = (s.s)[l-1], (s.s)[:l-1]
-	payload, s.p = (s.p)[l-1], (s.p)[:l-1]
-	return mark, payload, nil
+	return (s.stack)[l-1], nil
 }
 
-func (s *Stack[TPayload]) Consume(mark Mark, payload TPayload, actionPairing delegate.Action2[bool, Pair[TPayload]]) error {
+// Pop returns the top cell of the stack
+func (s *Stack[TPayload]) Pop() (cell Cell[TPayload], err error) {
 	l := s.Len()
 	if l == 0 {
-		actionPairing.TryCall(false, Pair[TPayload]{L: mark, LVal: payload})
+		return Cell[TPayload]{Mark: NIL}, ErrInsufficientStackLen
+	}
+	cell = (s.stack)[l-1]
+	s.stack = (s.stack)[:l-1]
+	return cell, nil
+}
+
+// Consume - try consumes the top cell of the stack
+// if the top cell's mark is pair with the given mark, then the top cell will
+// be popped out and paired with the given cell
+// and the paired cell will be pushed into the result list
+// otherwise, the given cell will be pushed into the stack
+//
+// actionPairing - action to be called when each input mark and payload are
+// inputted, when the top cell's mark is pair with the given mark, the action
+// will be called with true and the pair, and the given cell will be the right
+// cell; otherwise, the action will be called with false and the pair, the given
+// cell will be the left cell of the pair
+func (s *Stack[TPayload]) Consume(mark Mark, payload TPayload,
+	actionPairing delegate.Action2[bool, Pair[TPayload]],
+) error {
+	l := s.Len()
+	if l == 0 {
+		actionPairing.TryCall(false, Pair[TPayload]{L: Cell[TPayload]{Mark: mark, Val: payload}})
 		return s.Push(mark, payload)
 	}
-	peak, err := s.Peak()
+	peak, err := s.PeekMark()
 	if err != nil {
 		return err
 	}
 	if IsPair(peak, mark) {
-		m0, p0, err := s.Pop()
+		lVal, err := s.Pop()
 		if err != nil {
 			return err
 		}
 
 		res := Pair[TPayload]{
-			L:    m0,
-			R:    mark,
-			LVal: p0,
-			RVal: payload,
+			L: lVal,
+			R: Cell[TPayload]{Mark: mark, Val: payload},
 		}
 		s.Results = append(s.Results, res)
 
 		actionPairing.TryCall(true, res)
 		return nil
 	}
-	actionPairing.TryCall(false, Pair[TPayload]{L: mark, LVal: payload})
+	actionPairing.TryCall(false, Pair[TPayload]{L: Cell[TPayload]{Mark: mark, Val: payload}})
 	return s.Push(mark, payload)
 }

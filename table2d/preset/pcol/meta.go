@@ -45,6 +45,12 @@ const (
 	InvalidCol Col = -1
 )
 
+// NewColMeta creates a new ColMeta
+// sym - the symbol of the column, marks the type (or pair type) of the
+// column, and is automatically converted to lower case.
+// name - the name of the column, is automatically converted to snake case
+// constraint - the constraint of the column, is used to validate the
+// data, and is automatically converted to lower case.
 func NewColMeta[TCol ~Col](col TCol, sym, name, constraint string) *ColMeta {
 	sym = strs.TrimLower(sym)
 	name = strs.Conv2Snake(name)
@@ -63,17 +69,19 @@ var (
 	_ fmt.Stringer     = &ColMeta{}
 )
 
+// String returns the string representation of the ColMeta
 func (c *ColMeta) String() string {
 	return fmt.Sprintf("%d:%s:%s:%v", c.Col, c.Sym, c.Name, c.Constraint)
 }
 
 func (c *ColMeta) MarshalJSON() ([]byte, error) {
 	str := c.String()
-	return json.Marshal(str)
+	return []byte(str), nil
 }
 
 func (c *ColMeta) UnmarshalJSON(bytes []byte) error {
 	str := string(bytes)
+
 	values := strings.Split(str, ":")[0:]
 	if len(values) < 4 {
 		return ErrColMetaUnMarshalFmtFailed
@@ -83,7 +91,7 @@ func (c *ColMeta) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	name, sym, constraint := values[1], values[2], str[len(values[0])+len(values[1])+len(values[2])+3:]
+	sym, name, constraint := values[1], values[2], str[len(values[0])+len(values[1])+len(values[2])+3:]
 	*c = *NewColMeta(col, sym, name, constraint)
 	return nil
 }

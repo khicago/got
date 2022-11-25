@@ -20,7 +20,7 @@ func (header *ColHeader) ParseHeader(colFrom, colTo int, metaSymbols, names, con
 	colPush := func(pairing bool, event pmark.Pair[Col]) {
 		if !pairing {
 			child := NewColHeader()
-			typer.SliceLast(headerStack).Children[event.LVal] = ColHeaderChild{
+			typer.SliceLast(headerStack).Children[event.L.Val] = ColHeaderChild{
 				ColHeader: child,
 				Pair:      event,
 			}

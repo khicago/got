@@ -63,6 +63,16 @@ func Any[T any](v T) any {
 	return v
 }
 
+func Str[T any](v T) string {
+	switch t := any(v).(type) {
+	case string:
+		return t
+	case fmt.Stringer:
+		return t.String()
+	}
+	return fmt.Sprintf("%v", v)
+}
+
 func S2IMust[T constraints.Integer](str string) T {
 	i, err := strconv.ParseInt(str, 10, 64)
 	if err != nil {

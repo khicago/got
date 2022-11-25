@@ -49,10 +49,14 @@ type (
 		ForEach(fn delegate.Action2[pcol.Col, pseal.Seal])
 	}
 
+	// MarkPairProp - the index structure of its inner prop instance
+	// It can basically be thought of as a "window" to its inner prop: records the pairing mark
+	// of internal props to achieve the effect of simulating child objects
 	MarkPairProp struct {
 		pmark.Pair[pcol.Col]
-		prop    IProp
-		ValCols []pcol.Col
+		Prop IProp
+
+		valColsCache []pcol.Col
 	}
 )
 
@@ -123,11 +127,12 @@ func (p *Prop) Has(col pcol.Col) (ok bool) {
 func (p *Prop) Get(col pcol.Col) pseal.Seal {
 	v, ok := (p.p)[col]
 	if !ok {
-		return pseal.Nil
+		return pseal.Invalid
 	}
 	return v
 }
 
+// ForEach - ordered traversal, indexes are rebuilt when index length is not equal to data length
 func (p *Prop) ForEach(fn delegate.Action2[pcol.Col, pseal.Seal]) {
 	if len(p.keyIndex) != p.Len() {
 		keys := typer.Keys(p.p)
@@ -161,52 +166,68 @@ func (p *Prop) Child(col pcol.Col) (IProp, error) {
 			return nil, ErrPropertyNil
 		}
 
-		return MarkPairProp{
+		return &MarkPairProp{
 			Pair: markPair,
-			prop: p,
+			Prop: p,
 		}, nil
 	}
 	return nil, ErrPropertyType
 }
 
-func (m MarkPairProp) Len() int {
-	return len(m.ValCols)
+func (m *MarkPairProp) Len() int {
+	if m.L.Val == m.R.Val {
+		return 0
+	}
+
+	// refresh cache with side effect of rebuilding index
+	m.ForEach(nil)
+	return len(m.valColsCache)
 }
 
-func (m MarkPairProp) colInside(col pcol.Col) bool {
-	if col > m.LVal && col < m.RVal {
+func (m *MarkPairProp) colInside(col pcol.Col) bool {
+	if col > m.L.Val && col < m.R.Val {
 		return false
 	}
 	return true
 }
 
-func (m MarkPairProp) Has(col pcol.Col) bool {
+func (m *MarkPairProp) Has(col pcol.Col) bool {
 	if !m.colInside(col) {
 		return false
 	}
-	return m.prop.Has(col)
+	return m.Prop.Has(col)
 }
 
-func (m MarkPairProp) Get(col pcol.Col) pseal.Seal {
+func (m *MarkPairProp) Get(col pcol.Col) pseal.Seal {
 	if !m.colInside(col) {
-		return pseal.Nil
+		return pseal.Invalid
 	}
-	return m.prop.Get(col)
+	return m.Prop.Get(col)
 }
 
-func (m MarkPairProp) Child(col pcol.Col) (IProp, error) {
-	if !typer.SliceContains(m.ValCols, col) {
+func (m *MarkPairProp) Child(col pcol.Col) (IProp, error) {
+	if col >= m.R.Val && col <= m.L.Val {
 		return nil, ErrPropertyNil
 	}
 
-	return m.prop.Child(col)
+	return m.Prop.Child(col)
 }
 
-func (m MarkPairProp) ForEach(fn delegate.Action2[pcol.Col, pseal.Seal]) {
-	m.prop.ForEach(func(c pcol.Col, s pseal.Seal) {
-		if c <= m.LVal || c >= m.RVal {
+// ForEach - iterate all the properties inside the mark pair
+// the mark pair is not included
+// side effect of rebuilding index
+func (m *MarkPairProp) ForEach(fn delegate.Action2[pcol.Col, pseal.Seal]) {
+	if m.valColsCache == nil {
+		m.valColsCache = make([]pcol.Col, 0, m.Prop.Len())
+	}
+	m.valColsCache = m.valColsCache[:0]
+	m.Prop.ForEach(func(col pcol.Col, s pseal.Seal) {
+		// skip the mark pair
+		if col >= m.R.Val || col <= m.L.Val {
 			return
 		}
-		fn.TryCall(c, s)
+		// side effect of rebuilding index
+		m.valColsCache = append(m.valColsCache, col)
+		fn.TryCall(col, s)
 	})
 }

@@ -11,7 +11,8 @@ type (
 	}
 )
 
-var Nil = Seal{
+// Invalid - invalid seal
+var Invalid = Seal{
 	ty:  TyNil,
 	val: DefaultAny,
 }
@@ -55,6 +56,10 @@ func (s Seal) Int() (int, error) {
 	return typer.Convert[int](s.val, DefaultInt)
 }
 
+func (s Seal) I64() (int64, error) {
+	return typer.ConvI2I64Any(s.val)
+}
+
 func (s Seal) Float() (float64, error) {
 	return typer.Convert[float64](s.val, DefaultFloat)
 }
@@ -65,4 +70,8 @@ func (s Seal) String() (string, error) {
 
 func (s Seal) Memo() (string, error) {
 	return typer.Convert(s.val, DefaultMemo)
+}
+
+func (s Seal) InInvalid() bool {
+	return s.Type() == TyNil
 }

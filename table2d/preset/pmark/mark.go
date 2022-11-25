@@ -1,6 +1,8 @@
 package pmark
 
 type (
+	// Mark is a string type that represents a mark
+	// it is used to pair marks
 	Mark string
 )
 
@@ -41,20 +43,28 @@ var (
 	}
 )
 
+// Name returns the name of the mark
 func (p Mark) Name() string {
 	return names[p]
 }
 
+// Registered returns true if the mark is registered
 func (p Mark) Registered() (registered bool) {
+	// NIL mark is not considered as registered
 	_, registered = names[p]
 	return
 }
 
+// IsLeft returns true if the mark is a left mark
 func (p Mark) IsLeft() (isLeft bool) {
 	_, isLeft = pairLR[p]
 	return
 }
 
+// Pairing returns the pairing mark
+// - if the mark is not registered, it returns NIL
+// - if the mark is a left mark, it returns the right mark
+// - if the mark is a right mark, it returns the left mark
 func (p Mark) Pairing() Mark {
 	r, ok := pairLR[p]
 	if ok {
@@ -67,6 +77,15 @@ func (p Mark) Pairing() Mark {
 	return NIL
 }
 
+// PairedWith returns true if the mark is paired with the given mark
+func (p Mark) PairedWith(other Mark) bool {
+	if !p.Registered() || !other.Registered() {
+		return false
+	}
+	return p.Pairing() == other
+}
+
+// IsPair returns true if the two marks are a pair
 func IsPair[T ~string](begin, end T) bool {
 	r, ok := pairLR[Mark(begin)]
 	if !ok {

@@ -1,12 +1,11 @@
 package preset
 
 import (
+	"github.com/khicago/got/util/inlog"
 	"testing"
 
 	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pmark"
-	"github.com/khicago/got/util/inlog"
-
 	"github.com/khicago/got/table2d/preset/pseal"
 
 	"github.com/stretchr/testify/assert"
@@ -29,10 +28,8 @@ func TestPreset(t *testing.T) {
 		},
 		childrenCols: PropChildIndex{
 			4: pmark.Pair[pcol.Col]{
-				L:    "{",
-				R:    "}",
-				LVal: 4,
-				RVal: 9,
+				L: pmark.Cell[pcol.Col]{Val: 4, Mark: "{"},
+				R: pmark.Cell[pcol.Col]{Val: 9, Mark: "}"},
 			},
 		},
 	}
@@ -55,15 +52,17 @@ func TestPreset(t *testing.T) {
 
 	vList, err := example.Child(4)
 	assert.Nil(t, err, "convert list failed")
+	assert.Equal(t, 4, vList.Len(), "convert list len error")
 
-	testValInd := 0
+	testValInd := int64(0)
+
 	vList.ForEach(func(col pcol.Col, seal pseal.Seal) {
 		testValInd++
-		vListVal, err := seal.Int()
-		assert.Nil(t, err, "convert list failed")
+		vListVal, e := seal.I64()
+		inlog.Infof("list val %v: %v %v", testValInd, vListVal, e)
+		assert.Nil(t, e, "convert list failed")
 		assert.Equal(t, testValInd, vListVal, "convert list child val error")
 
-		inlog.Infof("list val %v: %v %v", testValInd, vListVal, err)
 	})
 	//
 	//voi, err := vl.Get(5).Int()

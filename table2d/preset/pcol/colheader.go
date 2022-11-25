@@ -24,6 +24,7 @@ type (
 	// and is also optimised for queries by means of cached indexes etc. A
 	// Preset has one and only one root ColHeader
 	ColHeader struct {
+
 		// Def handled ColMeta's information contained directly in
 		// this ColHeader
 		Def map[Col]*ColMeta `json:"def"`
@@ -37,6 +38,7 @@ type (
 		// be too complicated to use query indexing to make it.
 		Children ColHeaderChildren `json:"sub"`
 
+		// nameColIndex is a cache of the name of the ColMeta
 		nameColIndex map[string]Col
 	}
 
@@ -55,6 +57,7 @@ var (
 	_ json.Unmarshaler = &ColHeader{}
 )
 
+// NewColHeader creates a new ColHeader
 func NewColHeader() *ColHeader {
 	return &ColHeader{
 		Def:      make(map[Col]*ColMeta),
@@ -64,13 +67,18 @@ func NewColHeader() *ColHeader {
 	}
 }
 
+// Set sets a ColMeta to the ColHeader
+// copy the ColMeta to avoid the pointer being modified and
 func (header *ColHeader) Set(col Col, colDef *ColMeta) *ColHeader {
-	colDef.Col = col
-	colDef.Constraint = strs.TrimLower(colDef.Constraint)
-	header.Def[col] = colDef
+	c := *colDef
+	c.Col = col
+	c.Constraint = strs.TrimLower(colDef.Constraint)
+	header.Def[col] = &c
 	return header
 }
 
+// ColOf returns the Col of the ColMeta by name
+// returns InvalidCol if not found
 func (header *ColHeader) ColOf(name string) Col {
 	if v, ok := header.nameColIndex[name]; ok {
 		return v
@@ -84,10 +92,15 @@ func (header *ColHeader) ColOf(name string) Col {
 	return InvalidCol
 }
 
+// Get returns the ColMeta by Col
+// returns nil if not found
 func (header *ColHeader) Get(col Col) *ColMeta {
 	return header.Def[col]
 }
 
+// GetByIndex returns the ColMeta by index
+// returns nil if not found
+// e.g.: for
 func (header *ColHeader) GetByIndex(index int) *ColMeta {
 	keys := typer.Keys(header.Def)
 	sort.Ints(keys)
@@ -96,7 +109,7 @@ func (header *ColHeader) GetByIndex(index int) *ColMeta {
 }
 
 func (hChild *ColHeaderChild) GetByMark(indexOrCol string) *ColMeta {
-	if hChild.Pair.L == "[" {
+	if hChild.L.Mark == "[" {
 		ind, err := strconv.Atoi(indexOrCol)
 		if err != nil {
 			return nil
@@ -114,8 +127,8 @@ func (header *ColHeader) GetByPth(pth ...string) *ColMeta {
 	var (
 		recursive = ColHeaderChild{
 			Pair: pmark.Pair[Col]{
-				L: "{",
-				R: "}",
+				L: pmark.Cell[Col]{Mark: "{"},
+				R: pmark.Cell[Col]{Mark: "}"},
 			},
 			ColHeader: header,
 		}

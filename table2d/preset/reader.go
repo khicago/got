@@ -102,7 +102,7 @@ GetColPID:
 	// 这个机制主要保证在没有 ColHeader 的时候, Props 自己能降级到支持平铺的结构访问
 	childrenCols := make(PropChildIndex)
 	for i, p := range marksStack.Results {
-		childrenCols[p.LVal] = marksStack.Results[i]
+		childrenCols[p.L.Val] = marksStack.Results[i]
 	}
 
 	inlog.Debugf("[READER] start parse data, got header %s", utils.MarshalIndentPrintAll(preset.Headline))
