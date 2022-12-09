@@ -2,12 +2,11 @@ package typer
 
 import (
 	"sort"
-	
-	"golang.org/x/exp/constraints"
 
 	"github.com/khicago/got/util/delegate"
-	"github.com/bytedance/gopkg/lang/fastrand"
+	"golang.org/x/exp/constraints"
 
+	"github.com/bytedance/gopkg/lang/fastrand"
 )
 
 func SliceForeach[TSliceVal any](slice []TSliceVal, foreachFn delegate.Action1[TSliceVal]) {
@@ -56,9 +55,7 @@ func SliceRand[TVal comparable](slice []TVal, defaultVal TVal) TVal {
 	if n == 0 {
 		return defaultVal
 	}
-	
-
-	i := fastrand.intn(n)
+	i := fastrand.Intn(n)
 	return slice[i]
 }
 

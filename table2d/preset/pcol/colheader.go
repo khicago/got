@@ -13,21 +13,11 @@ import (
 )
 
 type (
-	ColHeaderChild struct {
-		*ColHeader
-		pmark.Pair[Col]
-	}
-
-	ColHeaderChildren map[Col]ColHeaderChild
-
-	// The ColHeader is a nested structure of ColMeta information tables
-	// and is also optimised for queries by means of cached indexes etc. A
-	// Preset has one and only one root ColHeader
 	ColHeader struct {
+		*ColHeaderData
 
-		// Def handled ColMeta's information contained directly in
-		// this ColHeader
-		Def map[Col]*ColMeta `json:"def"`
+		// ColHeaderChildren is the range of ColHeader
+		*pmark.Pair[Col]
 
 		// Children handle children of the meta table
 		// why Col data needs to be structured:
@@ -37,6 +27,17 @@ type (
 		// inside them, there are problems with renaming, so it would
 		// be too complicated to use query indexing to make it.
 		Children ColHeaderChildren `json:"sub"`
+	}
+
+	ColHeaderChildren map[Col]*ColHeader
+
+	// The ColHeaderData is a nested structure of ColMeta information tables
+	// and is also optimised for queries by means of cached indexes etc. A
+	// Preset has one and only one root ColHeader
+	ColHeaderData struct {
+		// Def handled ColMeta's information contained directly in
+		// this ColHeader
+		Def map[Col]*ColMeta `json:"def"`
 
 		// nameColIndex is a cache of the name of the ColMeta
 		nameColIndex map[string]Col
@@ -60,10 +61,11 @@ var (
 // NewColHeader creates a new ColHeader
 func NewColHeader() *ColHeader {
 	return &ColHeader{
-		Def:      make(map[Col]*ColMeta),
+		ColHeaderData: &ColHeaderData{
+			Def:          make(map[Col]*ColMeta),
+			nameColIndex: make(map[string]Col),
+		},
 		Children: make(ColHeaderChildren),
-
-		nameColIndex: make(map[string]Col),
 	}
 }
 
@@ -108,34 +110,31 @@ func (header *ColHeader) GetByIndex(index int) *ColMeta {
 	return header.Def[keys[index]]
 }
 
-func (hChild *ColHeaderChild) GetByMark(indexOrCol string) *ColMeta {
-	if hChild.L.Mark == "[" {
+// GetByIndexOrColName returns the ColMeta by index or name
+// if the ColHeader is a list, it will be treated as an index
+// otherwise it will be treated as a name
+func (header *ColHeader) GetByIndexOrColName(indexOrCol string) *ColMeta {
+	// if the ColHeader is a list, it will be treated as an index
+	// if the Pair is nil, it means that the ColHeader is a map
+	if header.Pair != nil && header.L.Mark == "[" {
 		ind, err := strconv.Atoi(indexOrCol)
 		if err != nil {
 			return nil
 		}
-		return hChild.GetByIndex(ind)
+		return header.GetByIndex(ind)
 	}
-	col := hChild.ColOf(indexOrCol) // be mark for child
+	col := header.ColOf(indexOrCol) // be mark for child
 	if col == InvalidCol {
 		return nil
 	}
-	return hChild.Get(col)
+	return header.Get(col)
 }
 
 func (header *ColHeader) GetByPth(pth ...string) *ColMeta {
-	var (
-		recursive = ColHeaderChild{
-			Pair: pmark.Pair[Col]{
-				L: pmark.Cell[Col]{Mark: "{"},
-				R: pmark.Cell[Col]{Mark: "}"},
-			},
-			ColHeader: header,
-		}
-		node *ColMeta
-	)
+	var node *ColMeta
+	recursive := header
 	for i := range pth {
-		node = recursive.GetByMark(pth[i])
+		node = recursive.GetByIndexOrColName(pth[i])
 		inlog.Debugf("-GetByPth> recursive node (i=%d),\tpth=%v,\tnode=`%v`\n", i, pth, node)
 		if node == nil || i == len(pth)-1 {
 			inlog.Debugf("-GetByPth> recursive node (final),\tpth=%v,\tnode=`%v`\n", pth, node)
@@ -152,13 +151,31 @@ func (header *ColHeader) GetByPth(pth ...string) *ColMeta {
 	return node
 }
 
+func (header *ColHeader) IsSelfFiled(col Col) bool {
+	// in range of header.Pair
+	if header.Pair != nil && !header.Pair.Inside(col) {
+		return false
+	}
+	// not overlap with children
+	for _, child := range header.Children {
+		if child.Pair.Between(col) {
+			return false
+		}
+	}
+	return true
+}
+
 func (header *ColHeader) ForeachCol(action func(colMeta *ColMeta), includeChildren bool) {
 	for _, def := range header.Def {
+		if !header.IsSelfFiled(def.Col) {
+			continue
+		}
 		action(def)
 	}
 	if !includeChildren {
 		return
 	}
+	// every child can be scanned
 	for _, child := range header.Children {
 		child.ForeachCol(action, true)
 	}

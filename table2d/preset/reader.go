@@ -51,7 +51,7 @@ func ReadLines(ctx context.Context, reader tablety.LineReader[string]) (*Preset,
 			return nil, err
 		}
 
-		inlog.Debugf("ln(%d) line: %v ;\n", rowCount, ln)
+		inlog.Debugf("ln(%d) line: %v\n", rowCount, ln)
 		return ln, nil
 	}
 
@@ -110,9 +110,11 @@ GetColPID:
 		inlog.Debugf("read data line, %v, %v \n", line, typer.IsNotNil(line))
 		prop := NewProp()
 		prop.childrenCols = childrenCols
+
 		preset.Headline.ForeachCol(func(colMeta *pcol.ColMeta) {
 			if colMeta.Col >= len(line) {
-				inlog.Warnf("try parse col %d of prop row %v skipped, length %d is insufficient %d\n", colMeta, rowCount, len(line))
+				inlog.Warnf("try parse col %d of prop row %v skipped, length %d is insufficient %d, meta = %+v\n",
+					colMeta.Col, rowCount, len(line), colMeta)
 				return
 			}
 			str := line[colMeta.Col]

@@ -2,6 +2,7 @@ package preset
 
 import (
 	"context"
+	"io"
 	"testing"
 
 	"github.com/khicago/got/internal/utils"
@@ -30,8 +31,9 @@ func (m *MockLineReader) Read() (ret []string, err error) {
 	if m.row < len(m.MockTableReader.Data) {
 		ret = m.MockTableReader.Data[m.row]
 		m.row++
+		return ret, nil
 	}
-	return ret, nil
+	return nil, io.EOF
 }
 
 func (m MockTableReader) Reader() *MockLineReader {
@@ -70,7 +72,7 @@ var data = MockTableReader{
 	Data: [][]string{
 		{"@", "ID", "INT", "Float", "[", "ID", "]", "{", "ID", "}"},
 		{" ", "link(@)", "test($>1,$<50)", "test($%2)", "link(item)", "", "", "select", "", ""},
-		{"", "LvUp", "Power", "Magic", "InitItems", "", "", "InnerLvUpItem", "LvUp", ""},
+		{"", "ID", "Power", "Magic", "InitItems", "", "", "InnerLvUpItem", "LvUp", ""},
 		{"10001", "10002", "12", "1.2", "", "1010001", "", "", "1010003", ""},
 	},
 }
@@ -82,6 +84,7 @@ func TestPresetReader(t *testing.T) {
 	}
 
 	inlog.Infof("header: %s\n", utils.MarshalIndentPrintAll(p.Headline))
+
 	inlog.Infof("table: %s\n", utils.MarshalPrintAll(p.PropTable))
 
 	lvUpMeta := p.Headline.GetByPth("lv_up")
@@ -90,14 +93,14 @@ func TestPresetReader(t *testing.T) {
 	}
 
 	lvUpCol := lvUpMeta.Col
-	if !assert.Equal(t, 1, lvUpCol, "lv_up col error") {
+	if !assert.Equal(t, 8, lvUpCol, "lv_up col error") {
 		return
 	}
 	v, err := p.QueryByCol(10001, lvUpCol).ID()
 	if !assert.Nil(t, err, "get lvUpCol of 10001 failed") {
 		return
 	}
-	assert.Equal(t, int64(10002), v, "get lvUpCol of 10001 val error")
+	assert.Equal(t, int64(1010003), v, "get lvUpCol of 10001 val error")
 }
 
 func TestPresetReaderLines(t *testing.T) {

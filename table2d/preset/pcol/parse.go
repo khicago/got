@@ -18,16 +18,21 @@ func (header *ColHeader) ParseHeader(colFrom, colTo int, metaSymbols, names, con
 
 	headerStack := []*ColHeader{header}
 	colPush := func(pairing bool, event pmark.Pair[Col]) {
+		peak := typer.SliceLast(headerStack)
+		// if not pairing, create a new child, and push it into stack
 		if !pairing {
-			child := NewColHeader()
-			typer.SliceLast(headerStack).Children[event.L.Val] = ColHeaderChild{
-				ColHeader: child,
-				Pair:      event,
+			child := &ColHeader{
+				ColHeaderData: peak.ColHeaderData,
+				Pair:          &event,
 			}
 			headerStack = append(headerStack, child)
+			peak.Children[event.L.Val] = child
 			inlog.Debugf("------------ header stack in %#v, %v\n", event, headerStack)
 			return
 		}
+		// if pairing, overwrite the current header's pair
+		peak.Pair = &event
+		// pop the stack
 		headerStack = headerStack[:len(headerStack)-1]
 		inlog.Debugf("------------ header stack out %#v, %v\n", event, headerStack)
 	}
@@ -49,6 +54,7 @@ func (header *ColHeader) ParseHeader(colFrom, colTo int, metaSymbols, names, con
 			typer.SliceTryGet(constraints, c, ""),
 		))
 
+		// only mark will be pushed into stack
 		if ty == pseal.TyMark {
 			err := marksStack.Consume(pmark.Mark(sym), c, colPush)
 			if err != nil {

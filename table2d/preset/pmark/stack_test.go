@@ -1,14 +1,14 @@
 package pmark_test
 
 import (
+	"testing"
+
 	"github.com/khicago/got/table2d/preset/pmark"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 // TestStackPushPop - test pmark.Stack's Push and Pop methods
 func TestStackPushPop(t *testing.T) {
-
 	stack := pmark.Stack[int]{}
 	// test empty len & peek & pop
 	assert.Equal(t, 0, stack.Len())
@@ -45,12 +45,10 @@ func TestStackPushPop(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, pmark.Cell[int]{Mark: pmark.BucketsSquareR, Val: 8}, v)
 	assert.Equal(t, 7, stack.Len())
-
 }
 
 // TestStackConsume - test pmark.Stack.Consume() with testify
 func TestStackConsume(t *testing.T) {
-
 	// test stack.Consume()
 	stack := pmark.Stack[int]{}
 	err := stack.Consume(pmark.BucketsAngleL, 1, func(meet bool, v pmark.Pair[int]) {
@@ -108,5 +106,4 @@ func TestStackConsume(t *testing.T) {
 		L: pmark.Cell[int]{Mark: pmark.BucketsCurlyL, Val: 3},
 		R: pmark.Cell[int]{Mark: pmark.BucketsCurlyR, Val: 6},
 	}, stack.Results[2])
-
 }

@@ -4,24 +4,26 @@ import (
 	"errors"
 	"fmt"
 
+	"golang.org/x/exp/constraints"
+
 	"github.com/khicago/got/util/delegate"
 )
 
 type (
 	// Cell - a cell with mark and payload
-	Cell[TPayload any] struct {
-		Mark `json:"mark"`
+	Cell[TPayload constraints.Ordered] struct {
 		Val  TPayload `json:"val"`
+		Mark `json:"mark"`
 	}
 
 	// Pair - a pair of cells, generally used for pairing results
-	Pair[TPayload any] struct {
+	Pair[TPayload constraints.Ordered] struct {
 		L Cell[TPayload] `json:"l"`
 		R Cell[TPayload] `json:"r"`
 	}
 
 	// Stack - a stack of cells, supporting mark pairings
-	Stack[TPayload any] struct {
+	Stack[TPayload constraints.Ordered] struct {
 		stack   []Cell[TPayload]
 		Results []Pair[TPayload]
 	}
@@ -32,8 +34,18 @@ var (
 	ErrMarkAreNotRegistered = errors.New("mark are not registered")
 )
 
+// Between - check if the pair is between the given value
+func (p Pair[TPayload]) Between(val TPayload) bool {
+	return p.L.Val <= val && val <= p.R.Val
+}
+
+// Inside - check if the pair is inside the given value
+func (p Pair[TPayload]) Inside(val TPayload) bool {
+	return p.L.Val < val && val < p.R.Val
+}
+
 // NewStack - create a new stack
-func NewStack[TPayload any](cap int) *Stack[TPayload] {
+func NewStack[TPayload constraints.Ordered](cap int) *Stack[TPayload] {
 	ret := Stack[TPayload]{}
 
 	if cap > 0 {
@@ -41,7 +53,7 @@ func NewStack[TPayload any](cap int) *Stack[TPayload] {
 		ret.Results = make([]Pair[TPayload], 0, (cap+1)>>1)
 	} else {
 		ret.stack = make([]Cell[TPayload], 0)
-		ret.Results = make([]Pair[TPayload], 01)
+		ret.Results = make([]Pair[TPayload], 0o1)
 	}
 	return &ret
 }

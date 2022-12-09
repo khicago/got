@@ -1,8 +1,9 @@
 package preset
 
 import (
-	"github.com/khicago/got/util/inlog"
 	"testing"
+
+	"github.com/khicago/got/util/inlog"
 
 	"github.com/khicago/got/table2d/preset/pcol"
 	"github.com/khicago/got/table2d/preset/pmark"
@@ -62,7 +63,6 @@ func TestPreset(t *testing.T) {
 		inlog.Infof("list val %v: %v %v", testValInd, vListVal, e)
 		assert.Nil(t, e, "convert list failed")
 		assert.Equal(t, testValInd, vListVal, "convert list child val error")
-
 	})
 	//
 	//voi, err := vl.Get(5).Int()
