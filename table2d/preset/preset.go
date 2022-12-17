@@ -41,6 +41,7 @@ func (p *Preset) QueryByCol(pid PresetID, col pcol.Col) pseal.Seal {
 // Query returns the seal of the property by the path
 func (p *Preset) Query(pid PresetID, pth ...string) pseal.Seal {
 	cm := p.Headline.GetByPth(pth...)
+	inlog.Infof("got cm = %v\n", cm)
 	if cm == nil {
 		inlog.Debugf("got wrong path when parse %d, pth = %v", pid, pth)
 		return pseal.Invalid

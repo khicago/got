@@ -21,10 +21,7 @@ func (header *ColHeader) ParseHeader(colFrom, colTo int, metaSymbols, names, con
 		peak := typer.SliceLast(headerStack)
 		// if not pairing, create a new child, and push it into stack
 		if !pairing {
-			child := &ColHeader{
-				ColHeaderData: peak.ColHeaderData,
-				Pair:          &event,
-			}
+			child := peak.ForkChild(&event)
 			headerStack = append(headerStack, child)
 			peak.Children[event.L.Val] = child
 			inlog.Debugf("------------ header stack in %#v, %v\n", event, headerStack)

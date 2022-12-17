@@ -59,7 +59,7 @@ func TestPreset(t *testing.T) {
 
 	vList.ForEach(func(col pcol.Col, seal pseal.Seal) {
 		testValInd++
-		vListVal, e := seal.I64()
+		vListVal, e := seal.Int()
 		inlog.Infof("list val %v: %v %v", testValInd, vListVal, e)
 		assert.Nil(t, e, "convert list failed")
 		assert.Equal(t, testValInd, vListVal, "convert list child val error")

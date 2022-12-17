@@ -35,13 +35,22 @@ var (
 )
 
 // Between - check if the pair is between the given value
-func (p Pair[TPayload]) Between(val TPayload) bool {
-	return p.L.Val <= val && val <= p.R.Val
+func (p Pair[TPayload]) Between(val TPayload, leftInclusive, rightInclusive bool) bool {
+	if leftInclusive && rightInclusive {
+		return p.L.Val <= val && val <= p.R.Val
+	}
+	if leftInclusive {
+		return p.L.Val <= val && val < p.R.Val
+	}
+	if rightInclusive {
+		return p.L.Val < val && val <= p.R.Val
+	}
+	return p.L.Val < val && val < p.R.Val
 }
 
 // Inside - check if the pair is inside the given value
 func (p Pair[TPayload]) Inside(val TPayload) bool {
-	return p.L.Val < val && val < p.R.Val
+	return p.Between(val, false, false)
 }
 
 // NewStack - create a new stack

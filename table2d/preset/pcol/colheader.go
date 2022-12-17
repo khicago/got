@@ -27,6 +27,9 @@ type (
 		// inside them, there are problems with renaming, so it would
 		// be too complicated to use query indexing to make it.
 		Children ColHeaderChildren `json:"sub"`
+
+		// nameColIndex is a cache of the name of the ColMeta
+		nameColIndex map[string]Col
 	}
 
 	ColHeaderChildren map[Col]*ColHeader
@@ -38,34 +41,36 @@ type (
 		// Def handled ColMeta's information contained directly in
 		// this ColHeader
 		Def map[Col]*ColMeta `json:"def"`
-
-		// nameColIndex is a cache of the name of the ColMeta
-		nameColIndex map[string]Col
 	}
-
-	//
-	//IColMetaTable interface {
-	//	Set(col Col, colDef *ColMeta) IColMetaTable
-	//	ColOf(name string) Col
-	//	Get(col Col) *ColMeta
-	//	GetByPth(name string) *ColMeta
-	//}
-
 )
 
 var (
-	_ json.Marshaler   = &ColHeader{}
-	_ json.Unmarshaler = &ColHeader{}
+	_ json.Marshaler   = NewColHeader()
+	_ json.Unmarshaler = NewColHeader()
 )
 
 // NewColHeader creates a new ColHeader
 func NewColHeader() *ColHeader {
 	return &ColHeader{
 		ColHeaderData: &ColHeaderData{
-			Def:          make(map[Col]*ColMeta),
-			nameColIndex: make(map[string]Col),
+			Def: make(map[Col]*ColMeta),
 		},
-		Children: make(ColHeaderChildren),
+		Children:     make(ColHeaderChildren),
+		nameColIndex: make(map[string]Col),
+	}
+}
+
+// ForkChild creates a new ColHeader with the same ColHeaderData
+// a new pair should be set to the Children
+// if you fork a new header of the child with a nil pair, then
+// you got a root header
+func (header *ColHeader) ForkChild(pair *pmark.Pair[Col]) *ColHeader {
+	// for a child, the pair is a sub-range of the parent
+	return &ColHeader{
+		ColHeaderData: header.ColHeaderData,
+		nameColIndex:  make(map[string]Col),
+		Children:      make(ColHeaderChildren),
+		Pair:          pair,
 	}
 }
 
@@ -85,11 +90,19 @@ func (header *ColHeader) ColOf(name string) Col {
 	if v, ok := header.nameColIndex[name]; ok {
 		return v
 	}
-	for k, v := range header.Def {
-		if v.Name == name {
-			header.nameColIndex[name] = k
-			return k
+
+	for col, v := range header.Def {
+		if !header.IsSelfFiled(col, true) {
+			continue
 		}
+		if v.Name == name {
+			if exist, ok := header.nameColIndex[v.Name]; ok && exist != col {
+				// todo: name conflict issue
+				inlog.Warnf("name conflict: %s, %d, %d", v.Name, exist, col)
+			}
+			return col
+		}
+		header.nameColIndex[v.Name] = col
 	}
 	return InvalidCol
 }
@@ -104,7 +117,14 @@ func (header *ColHeader) Get(col Col) *ColMeta {
 // returns nil if not found
 // e.g.: for
 func (header *ColHeader) GetByIndex(index int) *ColMeta {
-	keys := typer.Keys(header.Def)
+	var keys []Col
+	for col := range header.Def {
+		// child col is counted as only one col (as its left mark)
+		if !header.IsSelfFiled(col, true) {
+			continue
+		}
+		keys = append(keys, col)
+	}
 	sort.Ints(keys)
 
 	return header.Def[keys[index]]
@@ -116,14 +136,16 @@ func (header *ColHeader) GetByIndex(index int) *ColMeta {
 func (header *ColHeader) GetByIndexOrColName(indexOrCol string) *ColMeta {
 	// if the ColHeader is a list, it will be treated as an index
 	// if the Pair is nil, it means that the ColHeader is a map
-	if header.Pair != nil && header.L.Mark == "[" {
+	if header.Pair != nil && header.Pair.L.Mark == "[" {
 		ind, err := strconv.Atoi(indexOrCol)
 		if err != nil {
 			return nil
 		}
+
 		return header.GetByIndex(ind)
 	}
-	col := header.ColOf(indexOrCol) // be mark for child
+	colName := indexOrCol
+	col := header.ColOf(colName) // be mark for child
 	if col == InvalidCol {
 		return nil
 	}
@@ -135,9 +157,9 @@ func (header *ColHeader) GetByPth(pth ...string) *ColMeta {
 	recursive := header
 	for i := range pth {
 		node = recursive.GetByIndexOrColName(pth[i])
-		inlog.Debugf("-GetByPth> recursive node (i=%d),\tpth=%v,\tnode=`%v`\n", i, pth, node)
+		inlog.Debugf("- GetByPth > recursive(i= %d),\tpth=%v:%v,\tnode=`%v`,\t%+v\n", i, pth, pth[i], node, recursive.Pair)
 		if node == nil || i == len(pth)-1 {
-			inlog.Debugf("-GetByPth> recursive node (final),\tpth=%v,\tnode=`%v`\n", pth, node)
+			inlog.Debugf("- GetByPth > recursive(final),\tpth=%v:%v,\tnode=`%v`,\t%+v\n", pth, pth[i], node, recursive.Pair)
 			break
 		}
 
@@ -151,14 +173,36 @@ func (header *ColHeader) GetByPth(pth ...string) *ColMeta {
 	return node
 }
 
-func (header *ColHeader) IsSelfFiled(col Col) bool {
+// IsSelfFiled returns whether the Col is in the range of the ColHeader
+// and does not overlap with the children
+// if considerChildrenMarkAsParentField is true, the mark will be counted
+// as a column of the ColHeader, otherwise it will be ignored as a child
+// and the column will be counted
+//
+// e.g.:
+//
+//	ColHeader: [0, 4], Children: [1, 4], IsSelfFiled(1, true): 1 => true
+//	ColHeader: [0, 4], Children: [1, 4], IsSelfFiled(1, false): 1 => false
+func (header *ColHeader) IsSelfFiled(col Col, considerChildrenMarkAsParentField bool) bool {
 	// in range of header.Pair
 	if header.Pair != nil && !header.Pair.Inside(col) {
 		return false
 	}
+
+	contains := func(col Col, pair *pmark.Pair[Col]) bool {
+		// overlap with children
+		if considerChildrenMarkAsParentField {
+			// the left mark is not counted as a part of the child
+			return pair.Between(col, false, true)
+		} else {
+			// the left mark is counted as a part of the child
+			return pair.Inside(col)
+		}
+	}
+
 	// not overlap with children
 	for _, child := range header.Children {
-		if child.Pair.Between(col) {
+		if contains(col, child.Pair) {
 			return false
 		}
 	}
@@ -167,7 +211,7 @@ func (header *ColHeader) IsSelfFiled(col Col) bool {
 
 func (header *ColHeader) ForeachCol(action func(colMeta *ColMeta), includeChildren bool) {
 	for _, def := range header.Def {
-		if !header.IsSelfFiled(def.Col) {
+		if !header.IsSelfFiled(def.Col, false) {
 			continue
 		}
 		action(def)
