@@ -55,11 +55,16 @@ func (p *Preset) QueryS(pid PresetID, pthStr string) pseal.Seal {
 }
 
 // ForEachOfCol - for a given column, call the foreach function for each property
-func (p *Preset) ForEachOfCol(col pcol.Col, foreach delegate.Handler2[PresetID, pseal.Seal]) error {
+func (p *Preset) ForEachOfCol(col pcol.Col, fn delegate.Handler2[PresetID, pseal.Seal]) error {
 	for pid, row := range *p.PropTable {
-		if err := foreach(pid, row.Get(col)); err != nil {
+		if err := fn(pid, row.Get(col)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// ForEach - for each property, try execute the foreach function
+func (p *Preset) ForEach(fn delegate.Handler2[PresetID, IProp], orderly bool) error {
+	return p.PropTable.ForEach(fn, orderly)
 }

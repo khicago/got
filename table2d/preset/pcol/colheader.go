@@ -74,6 +74,14 @@ func (header *ColHeader) ForkChild(pair *pmark.Pair[Col]) *ColHeader {
 	}
 }
 
+// GetChildByCol returns the ColHeader of the child by the left col, the
+// Children info is stored in the ColHeader.Children in the ParseHeader
+// process
+// returns nil if not found
+func (header *ColHeader) GetChildByCol(childLeftCol Col) *ColHeader {
+	return header.Children[childLeftCol]
+}
+
 // Set sets a ColMeta to the ColHeader
 // copy the ColMeta to avoid the pointer being modified and
 func (header *ColHeader) Set(col Col, colDef *ColMeta) *ColHeader {
@@ -145,11 +153,36 @@ func (header *ColHeader) GetByIndexOrColName(indexOrCol string) *ColMeta {
 		return header.GetByIndex(ind)
 	}
 	colName := indexOrCol
-	col := header.ColOf(colName) // be mark for child
+	col := header.ColOf(colName) // be name for child
 	if col == InvalidCol {
 		return nil
 	}
 	return header.Get(col)
+}
+
+// LenOf returns the length of a col
+// if the col is not found, it will return -2
+// if the col is a list, it will return the length of the list
+// otherwise, it will return -1
+func (header *ColHeader) LenOf(col Col) int {
+	node := header.Get(col)
+	if node == nil {
+		return -2
+	}
+	if node.Sym == "[" {
+		// get the children by node.Col
+		count, child := 0, header.Children[node.Col]
+		// count (child structure are counted as one col)
+		for col := range child.Def {
+			// child col is counted as only one col (as its left mark)
+			if !child.IsSelfFiled(col, true) {
+				continue
+			}
+			count++
+		}
+		return count
+	}
+	return -1
 }
 
 func (header *ColHeader) GetByPth(pth ...string) *ColMeta {

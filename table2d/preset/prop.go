@@ -18,8 +18,6 @@ import (
 type (
 	PresetID = int64
 
-	PropTable map[PresetID]*Prop // PID => Prop
-
 	PropData       map[pcol.Col]pseal.Seal
 	PropChildIndex map[pcol.Col]pmark.Pair[pcol.Col]
 

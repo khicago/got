@@ -69,6 +69,27 @@ func NewClass(className string, header *ColHeader) *ClassInfo {
 		Methods: make(map[string]MethodInfo),
 	}
 
+	//header.ForeachCol(func(col Col, meta *ColMeta) {
+	//	if meta.Type == pseal.TyNil {
+	//		return
+	//	}
+	//
+	//	if meta.Type == pseal.TyMark {
+	//		return
+	//	}
+	//
+	//	if typer.AssertZeroVal(meta.Name) {
+	//		inlog.Warnf("got empty name %#v", meta)
+	//	}
+	//
+	//	cla.Methods[strs.Conv2Camel(meta.Name)] = MethodInfo{
+	//		Col:        col,
+	//		TypeName:   meta.Type.TypeName(),
+	//		SealMethod: meta.Type.SealCallName(),
+	//		Meta:       meta,
+	//	}
+	//}, false)
+
 	typer.MapForEachOrderly(header.Def, func(col Col, meta *ColMeta) {
 		if meta.Type == pseal.TyNil {
 			return

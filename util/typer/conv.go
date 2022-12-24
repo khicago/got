@@ -52,7 +52,7 @@ func ConvI2I64Any(val any) (int64, error) {
 	case int64:
 		return t, nil
 	}
-	return strconv.ParseInt(fmt.Sprintf("%v", val), 10, 16)
+	return strconv.ParseInt(fmt.Sprintf("%v", val), 10, 64)
 }
 
 func I2Str[T constraints.Integer](num T) string {
