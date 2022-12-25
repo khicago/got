@@ -31,3 +31,15 @@ func (pt *PropTable) ForEach(fn delegate.Handler2[PresetID, IProp], orderly bool
 	}
 	return nil
 }
+
+func (pt *PropTable) Filter(predicate delegate.PredicateE[IProp]) (*PropTable, error) {
+	result := make(PropTable, 0)
+	for pid, prop := range *pt {
+		if ok, err := predicate(prop); err != nil {
+			return nil, err
+		} else if ok {
+			result[pid] = prop
+		}
+	}
+	return &result, nil
+}

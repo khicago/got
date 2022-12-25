@@ -2,6 +2,7 @@ package preset
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/khicago/got/table2d/preset/pcol"
@@ -68,3 +69,53 @@ func (p *Preset) ForEachOfCol(col pcol.Col, fn delegate.Handler2[PresetID, pseal
 func (p *Preset) ForEach(fn delegate.Handler2[PresetID, IProp], orderly bool) error {
 	return p.PropTable.ForEach(fn, orderly)
 }
+
+// Window - create a new preset by filtering the property table with given filters
+// the filters is a map of column path and predicate
+// the predicate is a function that takes a seal and returns a bool value
+// when the predicate or path be nil, it will be ignored
+//
+// the head line of the new preset will be the same as the old one (pointer)
+// the property table of the new preset will be a copy of the old one
+func (p *Preset) Window(filters map[string]delegate.PredicateE[pseal.Seal] /* predicate */) (window *Preset, err error) {
+	filtered := p.PropTable
+	for f, fn := range filters {
+		if fn == nil || f == "" {
+			continue // ignore the nil predicate
+		}
+
+		if len(*filtered) == 0 {
+			break // no need to filter
+		}
+
+		colMeta := p.Headline.GetByPth(f)
+		if colMeta == nil {
+			return nil, errors.New("got wrong path when filter")
+		}
+		col := colMeta.Col
+		// filter the property table, a copy will be made by the filter method
+		filtered, err = filtered.Filter(func(prop IProp) (bool, error) {
+			seal := prop.Get(col)
+			if seal == pseal.Invalid {
+				return false, nil // ignore the invalid seal
+			}
+			ok, e := fn(seal)
+			if e != nil {
+				return false, fmt.Errorf("got error when filter: %v", e)
+			}
+			return ok, nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &Preset{
+		Headline:  p.Headline,
+		PropTable: filtered,
+	}, nil
+}
+
+// Retrieve - retrieve the property by the given id
+//func (p *Preset) Retrieve(func(pid PresetID, indx *preset.Indx) error) (IProp, bool) {
+//	panic("implement me")
+//}
