@@ -59,10 +59,8 @@ func RunConcurrent[T any](elements []T, f func(t T), concurrency int) {
 	// option 2:
 	// 一开始就创建所有协程，但这样可能占用过多资源
 	for i := range elements {
-
 		go run(i, elements[i])
 	}
-
 }
 
 // TraverseAndWait traverses the elements and calls function f on each element asynchronously.

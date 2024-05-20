@@ -48,7 +48,7 @@ func (gen *fakeGen) MGet(ctx context.Context, count int64) ([]int64, error) {
 		return nil, err
 	}
 
-	ret := make([]int64, count)
+	ret := make([]int64, 0, count)
 	for i := form; i <= to; i++ {
 		ret = append(ret, prefixTs|(i<<ControlIDDigits))
 	}
