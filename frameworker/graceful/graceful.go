@@ -15,7 +15,7 @@ func GracefulServe(ctx context.Context,
 	errorHandler procast.ErrorHandler,
 	signals ...os.Signal,
 ) error {
-	ctx, cancel := WithWaitSignalAndCacel(ctx, signals...)
+	ctx, cancel := WithWaitSignalAndCancel(ctx, signals...)
 	defer cancel()
 
 	procast.SafeGo(func() {
@@ -26,11 +26,11 @@ func GracefulServe(ctx context.Context,
 }
 
 func WithWaitSignal(ctx context.Context, signals ...os.Signal) context.Context {
-	ctx, _ = WithWaitSignalAndCacel(ctx, signals...)
+	ctx, _ = WithWaitSignalAndCancel(ctx, signals...)
 	return ctx
 }
 
-func WithWaitSignalAndCacel(ctx context.Context, signals ...os.Signal) (context.Context, delegate.Action) {
+func WithWaitSignalAndCancel(ctx context.Context, signals ...os.Signal) (context.Context, delegate.Action) {
 	ctx, cancel := context.WithCancel(ctx)
 	procast.SafeGo(func() {
 		WaitSignal(signals...)

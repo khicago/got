@@ -136,6 +136,51 @@ func SliceMin[TSliceVal constraints.Ordered](data []TSliceVal) (ret TSliceVal) {
 	return ret
 }
 
+func SliceToTrueMap[TSliceVal comparable](list []TSliceVal) map[TSliceVal]struct{} {
+	m := make(map[TSliceVal]struct{}, len(list))
+	for _, v := range list {
+		m[v] = struct{}{}
+	}
+	return m
+}
+
+func SliceDiff[TSliceVal comparable](oldLst, newLst []TSliceVal) (toAdd, toRemove []TSliceVal) {
+	// Threshold to decide between loop and map approach
+	threshold := 10
+
+	// Determine the approach based on the threshold
+	var oldMap, newMap map[TSliceVal]struct{} = nil, nil
+	if len(oldLst) > threshold {
+		oldMap = SliceToTrueMap(oldLst)
+	}
+
+	if len(newLst) > threshold {
+		newMap = SliceToTrueMap(newLst)
+	}
+
+	// Find elements to add
+	for _, v := range newLst {
+		if oldMap != nil {
+			if _, exists := oldMap[v]; !exists {
+				toAdd = append(toAdd, v)
+			}
+		} else if !SliceContains(oldLst, v) {
+			toAdd = append(toAdd, v)
+		}
+	}
+	// Find elements to remove
+	for _, v := range oldLst {
+		if newMap != nil {
+			if _, exists := newMap[v]; !exists {
+				toRemove = append(toRemove, v)
+			}
+		} else if !SliceContains(newLst, v) {
+			toRemove = append(toRemove, v)
+		}
+	}
+	return toAdd, toRemove
+}
+
 // no needs to provide stack fn
 //
 //func SlicePushTail[TSliceVal any](slicePtr *[]TSliceVal, val TSliceVal) {
