@@ -13,6 +13,34 @@ func Keys[TKey comparable, TVal any](m map[TKey]TVal) []TKey {
 	return keys
 }
 
+func Vals[TKey comparable, TVal any](m map[TKey]TVal) []TVal {
+	vals := make([]TVal, 0)
+	for k := range m {
+		vals = append(vals, m[k])
+	}
+	return vals
+}
+
+func KVs[TKey comparable, TVal any](m map[TKey]TVal) []struct {
+	Key TKey
+	Val TVal
+} {
+	kvs := make([]struct {
+		Key TKey
+		Val TVal
+	}, 0)
+	for k := range m {
+		kvs = append(kvs, struct {
+			Key TKey
+			Val TVal
+		}{
+			Key: k,
+			Val: m[k],
+		})
+	}
+	return kvs
+}
+
 func KeysSorted[TKey constraints.Ordered, TVal any](m map[TKey]TVal) []TKey {
 	keys := Keys(m)
 	SliceSort(keys)
