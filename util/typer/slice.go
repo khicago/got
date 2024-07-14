@@ -1,6 +1,8 @@
 package typer
 
 import (
+	"fmt"
+	"reflect"
 	"sort"
 
 	"github.com/khicago/got/util/delegate"
@@ -179,6 +181,61 @@ func SliceDiff[TSliceVal comparable](oldLst, newLst []TSliceVal) (toAdd, toRemov
 		}
 	}
 	return toAdd, toRemove
+}
+
+// IsSlice checks if the given variable is a slice.
+func IsSlice(v any) bool {
+	// Use reflect.ValueOf to get the reflection value of the variable
+	val := reflect.ValueOf(v)
+	// Check if the kind of the value is reflect.Slice
+	return val.Kind() == reflect.Slice || val.Kind() == reflect.Array
+}
+
+// Is2DSlice checks if the given variable is a 2D array.
+func Is2DSlice(v any) bool {
+	// Use reflect.ValueOf to get the reflection value of the variable
+	val := reflect.ValueOf(v)
+	// Check if the kind of the value is reflect.Array or reflect.Slice
+	if val.Kind() != reflect.Array && val.Kind() != reflect.Slice {
+		return false
+	}
+
+	// Check if the element type is also an array
+	elemType := val.Type().Elem()
+	return elemType.Kind() == reflect.Array || elemType.Kind() == reflect.Slice
+}
+
+// Flatten2DSliceGeneric flattens a 2D array of type T into a 1D array.
+func Flatten2DSliceGeneric[T any](input ...[]T) []T {
+	flattened := make([]T, 0)
+	for _, subArray := range input {
+		flattened = append(flattened, subArray...)
+	}
+	return flattened
+}
+
+// Flatten2DSlice flattens a 2D array into a 1D array.
+func Flatten2DSlice(input any) ([]any, error) {
+	val := reflect.ValueOf(input)
+
+	if val.Kind() != reflect.Array && val.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("input is not an array or slice")
+	}
+
+	elemType := val.Type().Elem()
+	if elemType.Kind() != reflect.Array && elemType.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("input is not a 2D slice")
+	}
+
+	flattened := make([]any, 0)
+	for i := 0; i < val.Len(); i++ {
+		subArray := val.Index(i)
+		for j := 0; j < subArray.Len(); j++ {
+			flattened = append(flattened, subArray.Index(j).Interface())
+		}
+	}
+
+	return flattened, nil
 }
 
 // no needs to provide stack fn
