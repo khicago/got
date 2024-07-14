@@ -4,21 +4,23 @@ import (
 	"sync/atomic"
 )
 
+// Option holds configuration options for concurrent execution.
 type Option struct {
-	Concurrency        int
-	WaitAtLeastDoneNum int
+	Concurrency        int // Number of concurrent tasks
+	WaitAtLeastDoneNum int // Number of tasks to complete before returning
 }
 
+// OptionFunc is a function that configures an Option.
 type OptionFunc func(*Option)
 
-// WithConcurrency - 设置并发度
+// WithConcurrency sets the concurrency level.
 func WithConcurrency(c int) OptionFunc {
 	return func(o *Option) {
 		o.Concurrency = c
 	}
 }
 
-// WithWaitAtLeastDoneNum - 设置完成多少个任务就退出
+// WithWaitAtLeastDoneNum sets the minimum number of tasks to complete before returning.
 func WithWaitAtLeastDoneNum(n int) OptionFunc {
 	return func(o *Option) {
 		o.WaitAtLeastDoneNum = n
@@ -26,83 +28,91 @@ func WithWaitAtLeastDoneNum(n int) OptionFunc {
 }
 
 // RunConcurrent runs function f on each element of elements concurrently.
-// concurrency - 并发度
+// concurrency specifies the maximum number of concurrent tasks.
 //
-// example:
+// Example:
 //
 //	RunConcurrent([]int{1, 2, 3, 4, 5}, func(n int) {
 //	    fmt.Println(n)
 //	    time.Sleep(time.Second)
 //	}, 2)
 //
-// in this example, RunConcurrent will run 5 tasks concurrently, and at
-// most 2 tasks are running concurrently. RunConcurrent will return
-// immediately after all tasks are started. after RunConcurrent returns,
-// the 5 tasks will continue to run.
-func RunConcurrent[T any](elements []T, f func(t T), concurrency int) {
+// In this example, RunConcurrent will run 5 tasks concurrently, with at most 2 tasks running at the same time.
+// RunConcurrent will return immediately after all tasks are started. The tasks will continue to run after RunConcurrent returns.
+func RunConcurrent[T any](elements []T, f func(T), concurrency int) {
+	// If concurrency is less than or equal to 0, set it to the length of elements
 	if concurrency <= 0 {
 		concurrency = len(elements)
 	}
 
-	// 遍历每个元素并发执行函数
+	// Create a semaphore channel to limit concurrency
+	// The semaphore channel is used to control the number of concurrently running goroutines.
+	// By sending an empty struct to the channel before starting a goroutine and receiving from
+	// the channel after the goroutine completes, we ensure that no more than 'concurrency' number
+	// of goroutines are running at the same time. The channel's capacity is set to 'concurrency',
+	// which means it can hold up to 'concurrency' number of empty structs. If the channel is full,
+	// any attempt to send to it will block until a slot becomes available, effectively limiting
+	// the number of concurrent goroutines.
 	sem := make(chan struct{}, concurrency)
 
+	// Define the function to run for each element
 	run := func(i int, ele T) {
-		// 这个信号量需要在这里声明，而不是在外面声明
-		// 这样主函数才能直接退出，而不用等待所有协程都完成
+		// Acquire a semaphore slot
 		sem <- struct{}{}
+		// Ensure the semaphore slot is released after the function completes
 		defer func() { <-sem }()
 
+		// Execute the provided function f on the element
 		f(ele)
 	}
 
-	// option 2:
-	// 一开始就创建所有协程，但这样可能占用过多资源
+	// Launch a goroutine for each element
 	for i := range elements {
 		go run(i, elements[i])
 	}
 }
 
 // TraverseAndWait traverses the elements and calls function f on each element asynchronously.
-// It returns only after at least waitAtLeastDoneNum tasks are done. leftover tasks will continue to run.
-// default concurrency is len(elements)
-// default waitAtLeastDoneNum is len(elements)
+// It returns only after at least waitAtLeastDoneNum tasks are done. Leftover tasks will continue to run.
+// The default concurrency is len(elements).
+// The default waitAtLeastDoneNum is len(elements).
 //
-// example:
+// Example:
 //
 //	TraverseAndWait([]int{1, 2, 3, 4, 5}, func(n int) {
 //	    fmt.Println(n)
 //	    time.Sleep(time.Second)
 //	}, WithWaitAtLeastDoneNum(3), WithConcurrency(2))
 //
-// in this example, TraverseAndWait will return after at least 3 tasks are done,
-// and at most 2 tasks are running concurrently. after TraverseAndWait returns,
-// the remaining 2 tasks will continue to run.
-func TraverseAndWait[T any](elements []T, f func(t T), opts ...OptionFunc) {
+// In this example, TraverseAndWait will return after at least 3 tasks are done,
+// with at most 2 tasks running concurrently. The remaining 2 tasks will continue to run after TraverseAndWait returns.
+func TraverseAndWait[T any](elements []T, f func(T), opts ...OptionFunc) {
+	// Initialize options with default values
 	options := Option{
-		WaitAtLeastDoneNum: len(elements), // 默认所有都完成才返回
-		Concurrency:        len(elements), // 默认所有都并发
+		WaitAtLeastDoneNum: len(elements), // Default to waiting for all tasks to complete
+		Concurrency:        len(elements), // Default to full concurrency
 	}
 	for _, opt := range opts {
 		opt(&options)
 	}
 
-	// Defensively ensure that waitNum is not less than 0
+	// Ensure waitAtLeastDoneNum is within valid range
 	if options.WaitAtLeastDoneNum < 0 {
 		options.WaitAtLeastDoneNum = 0
 	}
-
-	// Defensively ensure that waitNum is not more than the length of elements
 	if options.WaitAtLeastDoneNum > len(elements) {
 		options.WaitAtLeastDoneNum = len(elements)
 	}
 
-	// Set up the done channel and counter variables
+	// Channel to signal when enough tasks are done
 	done := make(chan struct{})
+	// Counter for completed tasks
 	numDone := int32(0)
 
+	// Run tasks concurrently
 	RunConcurrent(elements, func(e T) {
 		f(e)
+		// Increment the counter and signal if enough tasks are done
 		if atomic.AddInt32(&numDone, 1) >= int32(options.WaitAtLeastDoneNum) {
 			select {
 			case done <- struct{}{}:
@@ -111,7 +121,7 @@ func TraverseAndWait[T any](elements []T, f func(t T), opts ...OptionFunc) {
 		}
 	}, options.Concurrency)
 
-	// Wait until enough tasks are done
+	// Wait until the required number of tasks are done
 	if options.WaitAtLeastDoneNum > 0 {
 		<-done
 	}
