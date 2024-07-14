@@ -238,6 +238,55 @@ func Flatten2DSlice(input any) ([]any, error) {
 	return flattened, nil
 }
 
+// FlattenNestedSlices flattens nested slices or arrays into a single-dimensional slice.
+//
+// It takes two parameters:
+//   - input: the input data of any type, which may contain nested slices or arrays.
+//   - depth: the target flattening depth, controlling the number of levels to flatten.
+//
+// If the target depth is 0, no flattening is performed, and the input is returned as a slice.
+//
+// The function recursively flattens the input data up to the specified depth. If the current
+// depth reaches the target depth, the elements are added to the result slice without further
+// flattening.
+//
+// It returns a []any slice containing the flattened elements.
+func FlattenNestedSlices(input any, depth int) []any {
+	if depth <= 0 {
+		return []any{input}
+	}
+
+	val := reflect.ValueOf(input)
+
+	if val.Kind() != reflect.Array && val.Kind() != reflect.Slice {
+		return []any{input}
+	}
+
+	result := make([]any, 0)
+
+	for i := 0; i < val.Len(); i++ {
+		item := val.Index(i)
+
+		if item.Kind() == reflect.Interface {
+			actualItem := item.Elem()
+
+			if actualItem.Kind() == reflect.Array || actualItem.Kind() == reflect.Slice {
+				flattenedItem := FlattenNestedSlices(actualItem.Interface(), depth-1)
+				result = append(result, flattenedItem...)
+			} else {
+				result = append(result, actualItem.Interface())
+			}
+		} else if item.Kind() == reflect.Array || item.Kind() == reflect.Slice {
+			flattenedItem := FlattenNestedSlices(item.Interface(), depth-1)
+			result = append(result, flattenedItem...)
+		} else {
+			result = append(result, item.Interface())
+		}
+	}
+
+	return result
+}
+
 // no needs to provide stack fn
 //
 //func SlicePushTail[TSliceVal any](slicePtr *[]TSliceVal, val TSliceVal) {
