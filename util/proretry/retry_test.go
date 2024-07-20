@@ -2,6 +2,7 @@ package proretry
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -34,9 +35,12 @@ func TestRetryDo(t *testing.T) {
 			fn: func() error {
 				return errors.New("error")
 			},
-			maxRetries:    3,
-			backoff:       ConstantBackoff(time.Millisecond * 10),
-			expectedErr:   errors.New("error"),
+			maxRetries: 3,
+			backoff:    ConstantBackoff(time.Millisecond * 10),
+			expectedErr: &RetryError{
+				Attempts: 3,
+				LastErr:  errors.New("error"),
+			},
 			expectedCalls: 3,
 		},
 		{
@@ -44,10 +48,13 @@ func TestRetryDo(t *testing.T) {
 			fn: func() error {
 				return retryableErr
 			},
-			maxRetries:    3,
-			backoff:       ConstantBackoff(time.Millisecond * 10),
-			options:       []RetryOption{WithRetryableErrs(retryableErr)},
-			expectedErr:   retryableErr,
+			maxRetries: 3,
+			backoff:    ConstantBackoff(time.Millisecond * 10),
+			options:    []RetryOption{WithRetryableErrs(retryableErr)},
+			expectedErr: &RetryError{
+				Attempts: 3,
+				LastErr:  retryableErr,
+			},
 			expectedCalls: 3,
 		},
 		{
@@ -55,10 +62,15 @@ func TestRetryDo(t *testing.T) {
 			fn: func() error {
 				return errors.New("error")
 			},
-			maxRetries:    3,
-			backoff:       ConstantBackoff(time.Millisecond * 10),
-			options:       []RetryOption{WithRetryableErrs(errors.New("other error"))},
-			expectedErr:   errors.New("error"),
+			maxRetries: 3,
+			options: []RetryOption{
+				WithRetryableErrs(errors.New("other error")),
+				WithBackoff(ConstantBackoff(time.Millisecond * 10)),
+			},
+			expectedErr: &RetryError{
+				Attempts: 0,
+				LastErr:  errors.New("error"),
+			},
 			expectedCalls: 1,
 		},
 	}
@@ -70,8 +82,8 @@ func TestRetryDo(t *testing.T) {
 				calls++
 				return fn()
 			}
-			err := Run(test.fn, test.maxRetries, test.backoff, test.options...)
-			assert.Equal(t, test.expectedErr, err)
+			err := Run(test.fn, test.maxRetries, test.options...)
+			assert.Equal(t, fmt.Sprintf("%v", test.expectedErr), fmt.Sprintf("%v", err))
 			assert.Equal(t, test.expectedCalls, calls)
 		})
 	}
