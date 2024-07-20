@@ -186,7 +186,10 @@ func SliceDiff[TSliceVal comparable](oldLst, newLst []TSliceVal) (toAdd, toRemov
 // IsSlice checks if the given variable is a slice.
 func IsSlice(v any) bool {
 	// Use reflect.ValueOf to get the reflection value of the variable
-	val := reflect.ValueOf(v)
+	val, ok := v.(reflect.Value)
+	if !ok {
+		val = reflect.ValueOf(v)
+	}
 	// Check if the kind of the value is reflect.Slice
 	return val.Kind() == reflect.Slice || val.Kind() == reflect.Array
 }
@@ -194,9 +197,13 @@ func IsSlice(v any) bool {
 // Is2DSlice checks if the given variable is a 2D array.
 func Is2DSlice(v any) bool {
 	// Use reflect.ValueOf to get the reflection value of the variable
-	val := reflect.ValueOf(v)
+	val, ok := v.(reflect.Value)
+	if !ok {
+		val = reflect.ValueOf(v)
+	}
+
 	// Check if the kind of the value is reflect.Array or reflect.Slice
-	if val.Kind() != reflect.Array && val.Kind() != reflect.Slice {
+	if !IsSlice(val) {
 		return false
 	}
 
@@ -217,8 +224,7 @@ func Flatten2DSliceGeneric[T any](input ...[]T) []T {
 // Flatten2DSlice flattens a 2D array into a 1D array.
 func Flatten2DSlice(input any) ([]any, error) {
 	val := reflect.ValueOf(input)
-
-	if val.Kind() != reflect.Array && val.Kind() != reflect.Slice {
+	if !IsSlice(val) {
 		return nil, fmt.Errorf("input is not an array or slice")
 	}
 
@@ -257,8 +263,7 @@ func FlattenNestedSlices(input any, depth int) []any {
 	}
 
 	val := reflect.ValueOf(input)
-
-	if val.Kind() != reflect.Array && val.Kind() != reflect.Slice {
+	if !IsSlice(val) {
 		return []any{input}
 	}
 
@@ -285,6 +290,27 @@ func FlattenNestedSlices(input any, depth int) []any {
 	}
 
 	return result
+}
+
+func DoAsSlice[T any](input any, cb func(val T) error) error {
+	val := reflect.ValueOf(input)
+	if !IsSlice(val) {
+		if v, ok := input.(T); ok {
+			return cb(v)
+		}
+		return fmt.Errorf("input type mismatch: expected %T, got %T", *new(T), input)
+	}
+	for i := 0; i < val.Len(); i++ {
+		elem := val.Index(i).Interface()
+		if v, ok := elem.(T); ok {
+			if err := cb(v); err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("element type mismatch: expected %T, got %T", *new(T), elem)
+		}
+	}
+	return nil
 }
 
 // no needs to provide stack fn
